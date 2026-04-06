@@ -1,0 +1,105 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.expirado {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espaciado-lg);
+  padding-top: calc(var(--espaciado-lg) + env(safe-area-inset-top, 0));
+  padding-bottom: calc(var(--espaciado-lg) + env(safe-area-inset-bottom, 0));
+  background: linear-gradient(
+    165deg,
+    var(--colorp-desactivado) 0%,
+    #fde8ec 45%,
+    var(--colorp-secondary) 100%
+  );
+}
+
+.expirado__tarjeta {
+  width: 100%;
+  max-width: 22rem;
+  padding: var(--espaciado-xl);
+  border-radius: var(--espaciado-sm);
+  background: var(--colorp-secondary);
+  box-shadow:
+    0 4px 24px rgb(200 16 46 / 0.12),
+    0 1px 3px rgb(0 0 0 / 0.06);
+  border: 1px solid rgb(200 16 46 / 0.15);
+  text-align: center;
+}
+
+.expirado__icono {
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: 0 auto var(--espaciado-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--colorp-primary);
+  color: var(--colorp-secondary);
+}
+
+.expirado__svg {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.expirado__titulo {
+  margin: 0 0 var(--espaciado-md);
+  font-family: var(--fuente-primary);
+  font-size: 1.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: var(--colorp-primary);
+}
+
+.expirado__detalle {
+  margin: 0 0 var(--espaciado-md);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--colorp-primary);
+  line-height: 1.45;
+}
+
+.expirado__texto {
+  margin: 0 0 var(--espaciado-md);
+  font-size: 0.9375rem;
+  color: var(--colorp-tertiary);
+}
+
+.expirado__wa {
+  color: #128c7e;
+  font-weight: 600;
+}
+
+.expirado__pasos {
+  margin: 0 0 var(--espaciado-xs);
+  font-size: 0.875rem;
+  color: var(--colorp-tertiary);
+}
+
+.expirado__lista {
+  margin: 0 0 var(--espaciado-md);
+  padding-left: 1.25rem;
+  text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--colorp-extra);
+}
+
+.expirado__lista li {
+  margin-bottom: var(--espaciado-xs);
+}
+
+.expirado__cierre {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--colorp-primary);
+}

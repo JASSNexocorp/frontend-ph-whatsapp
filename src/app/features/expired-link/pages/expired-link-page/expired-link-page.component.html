@@ -1,0 +1,37 @@
+<div class="expirado" role="main">
+  <div class="expirado__tarjeta">
+    <div class="expirado__icono" aria-hidden="true">
+      <svg
+        class="expirado__svg"
+        viewBox="0 0 48 48"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2" />
+        <path
+          d="M14 14l20 20M34 14L14 34"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        />
+      </svg>
+    </div>
+    <h1 class="expirado__titulo">Este enlace expiró</h1>
+    @if (detalle()) {
+      <p class="expirado__detalle">{{ detalle() }}</p>
+    }
+    <p class="expirado__texto">
+      Por seguridad, los menús que enviamos por <span class="expirado__wa">WhatsApp</span> tienen
+      vigencia limitada. El que abriste ya no está disponible.
+    </p>
+    <p class="expirado__pasos">
+      <strong>¿Qué podés hacer?</strong>
+    </p>
+    <ol class="expirado__lista">
+      <li>Bajá al chat donde te escribimos.</li>
+      <li>Escribe <strong>"menu"</strong> en el chat y te enviaremos un menú nuevo.</li>
+      <li>Te enviamos un mensaje con el enlace actualizado.</li>
+    </ol>
+    <p class="expirado__cierre">¡Gracias por elegirnos!</p>
+  </div>
+</div>

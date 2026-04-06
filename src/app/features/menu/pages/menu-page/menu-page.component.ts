@@ -4,19 +4,34 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
+  OnInit,
   signal,
 } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+
+import { MenuClienteStore } from '../../aplicacion/menu-cliente.store';
 import { MenuCartModalComponent } from '../../components/menu-cart-modal/menu-cart-modal.component';
 import { MenuCollectionsNavComponent } from '../../components/menu-collections-nav/menu-collections-nav.component';
 import { MenuProductModalComponent } from '../../components/menu-product-modal/menu-product-modal.component';
 import { MENU_RUTAS_ASSETS } from '../../constants/menu-assets';
-import { MENU_CATALOGO_COLECCIONES } from '../../data/menu-catalogo.data';
-import type { LineaCarrito, ProductoMenuEjemplo, TipoEntregaId } from '../../models/menu.models';
+import { TiendaApiService } from '../../data/tienda-api.service';
+import type {
+  ColeccionMenuEjemplo,
+  LineaCarrito,
+  ProductoMenuEjemplo,
+  TipoEntregaId,
+} from '../../models/menu.models';
+import type { InformacionTiendaDto } from '../../models/tienda-informacion.models';
 import {
   calcularPrecioUnitarioConOpciones,
   firmaLineaCarrito,
   formatearPrecioBs,
 } from '../../utils/menu-format.util';
+import {
+  mapearInformacionAColeccionesMenu,
+  mapearProductoTiendaAUIMenu,
+} from '../../utils/tienda-mappers.util';
 
 @Component({
   selector: 'app-menu-page',
@@ -30,9 +45,20 @@ import {
   styleUrl: './menu-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MenuPageComponent {
+export class MenuPageComponent implements OnInit {
+  private readonly tiendaApi = inject(TiendaApiService);
+  private readonly menuCliente = inject(MenuClienteStore);
+
   readonly assetsMenu = MENU_RUTAS_ASSETS;
-  readonly colecciones = MENU_CATALOGO_COLECCIONES;
+
+  /** Catálogo cargado desde GET /tienda/informacion. */
+  colecciones = signal<ColeccionMenuEjemplo[]>([]);
+
+  informacionTienda = signal<InformacionTiendaDto | null>(null);
+
+  estadoCarga = signal<'cargando' | 'exito' | 'error'>('cargando');
+
+  mensajeError = signal<string | null>(null);
 
   coleccionActivaId = signal('pizzas');
   modalCarritoAbierto = signal(false);
@@ -63,8 +89,8 @@ export class MenuPageComponent {
   readonly nombreColeccionProductoModal = computed(() => {
     const p = this.productoActivo();
     if (!p) return '';
-    const col = this.colecciones.find((c) =>
-      c.productos.some((pr) => pr.id === p.id),
+    const col = this.colecciones().find((c) =>
+      c.productos.some((pr) => pr.id === p.id || pr.nombre === p.nombre),
     );
     return col?.nombre ?? '';
   });
@@ -91,12 +117,44 @@ export class MenuPageComponent {
     return suma > 0 ? formatearPrecioBs(suma) : null;
   });
 
+  ngOnInit(): void {
+    const te = this.menuCliente.tipoEntrega();
+    if (te === 'domicilio' || te === 'retiro') {
+      this.tipoEntrega.set(te);
+    }
+    void this.cargarInformacion();
+  }
+
+  private async cargarInformacion(): Promise<void> {
+    this.estadoCarga.set('cargando');
+    this.mensajeError.set(null);
+    try {
+      const info = await firstValueFrom(this.tiendaApi.obtenerInformacion());
+      this.informacionTienda.set(info);
+      this.colecciones.set(mapearInformacionAColeccionesMenu(info));
+      const primera = this.colecciones()[0]?.id;
+      if (primera) {
+        this.coleccionActivaId.set(primera);
+      }
+      this.estadoCarga.set('exito');
+    } catch {
+      this.estadoCarga.set('error');
+      this.mensajeError.set(
+        'No se pudo cargar el menú. Verificá tu conexión e intentá de nuevo.',
+      );
+    }
+  }
+
+  reintentarCarga(): void {
+    void this.cargarInformacion();
+  }
+
   private fijarScrollDocumento(bloquear: boolean): void {
     document.body.style.overflow = bloquear ? 'hidden' : '';
   }
 
   private buscarProductoPorId(idProducto: string): ProductoMenuEjemplo | null {
-    for (const c of this.colecciones) {
+    for (const c of this.colecciones()) {
       const p = c.productos.find((pr) => pr.id === idProducto);
       if (p) return p;
     }
@@ -133,11 +191,31 @@ export class MenuPageComponent {
   }
 
   abrirModalProducto(producto: ProductoMenuEjemplo): void {
-    this.lineaEditandoId.set(null);
-    this.productoActivo.set(producto);
-    this.idsOpcionesActivas.set([]);
-    this.modalProductoAbierto.set(true);
+    void this.abrirModalProductoInterno(producto, null, []);
+  }
+
+  private async abrirModalProductoInterno(
+    productoResumen: ProductoMenuEjemplo,
+    idLineaEdicion: string | null,
+    idsOpcionesIniciales: string[],
+  ): Promise<void> {
+    this.lineaEditandoId.set(idLineaEdicion);
     this.fijarScrollDocumento(true);
+    try {
+      const dto = await firstValueFrom(
+        this.tiendaApi.obtenerProductoPorTitulo(productoResumen.nombre),
+      );
+      const mapeado = mapearProductoTiendaAUIMenu(dto);
+      this.productoActivo.set(mapeado);
+      const idsValidos = new Set((mapeado.opciones ?? []).map((o) => o.id));
+      this.idsOpcionesActivas.set(
+        idsOpcionesIniciales.filter((id) => idsValidos.has(id)),
+      );
+    } catch {
+      this.productoActivo.set(productoResumen);
+      this.idsOpcionesActivas.set([...idsOpcionesIniciales]);
+    }
+    this.modalProductoAbierto.set(true);
   }
 
   cerrarModalProducto(): void {
@@ -165,12 +243,10 @@ export class MenuPageComponent {
     if (!linea) return;
     const producto = this.buscarProductoPorId(linea.idProducto);
     if (!producto) return;
-    this.lineaEditandoId.set(idLinea);
-    this.productoActivo.set(producto);
-    this.idsOpcionesActivas.set([...linea.idsOpcionesSeleccionadas]);
     this.modalCarritoAbierto.set(false);
-    this.modalProductoAbierto.set(true);
-    this.fijarScrollDocumento(true);
+    void this.abrirModalProductoInterno(producto, idLinea, [
+      ...linea.idsOpcionesSeleccionadas,
+    ]);
   }
 
   agregarDesdeModalProducto(): void {
