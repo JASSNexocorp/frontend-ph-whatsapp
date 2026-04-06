@@ -42,6 +42,17 @@
         </button>
       </header>
 
+      @if (avisoPedido(); as aviso) {
+        <div
+          class="menu-movil__aviso-pedido"
+          [class.menu-movil__aviso-pedido--error]="aviso.esError"
+          [attr.role]="aviso.esError ? 'alert' : 'status'"
+          aria-live="polite"
+        >
+          {{ aviso.mensaje }}
+        </div>
+      }
+
       <app-menu-collections-nav
         [colecciones]="colecciones()"
         [coleccionActivaId]="coleccionActivaId()"
@@ -142,6 +153,7 @@
     [pedidoMinimoFormateado]="pedidoMinimoFormateado()"
     [cumplePedidoMinimo]="cumplePedidoMinimo()"
     [faltaParaPedidoMinimoFormateado]="faltaParaPedidoMinimoFormateado()"
+    [enviandoPedido]="enviandoPedido()"
     [assets]="assetsMenu"
     (cerrar)="cerrarCarrito()"
     (tipoEntregaCambio)="seleccionarTipoEntrega($event)"

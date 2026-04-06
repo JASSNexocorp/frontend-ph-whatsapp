@@ -45,6 +45,8 @@ export class MenuCartModalComponent {
   cumplePedidoMinimo = input(true);
   /** Cuánto falta para el mínimo; null si ya se cumple o no hay mínimo. */
   faltaParaPedidoMinimoFormateado = input<string | null>(null);
+  /** Evita doble envío mientras el POST /tienda/notificar-carrito está en curso. */
+  enviandoPedido = input(false);
   assets = input.required<MenuRutasAssets>();
 
   cerrar = output<void>();
@@ -80,7 +82,11 @@ export class MenuCartModalComponent {
   }
 
   confirmacionBloqueada(): boolean {
-    return this.lineas().length === 0 || !this.cumplePedidoMinimo();
+    return (
+      this.lineas().length === 0 ||
+      !this.cumplePedidoMinimo() ||
+      this.enviandoPedido()
+    );
   }
 
   /** Debajo de «Tu carrito» en el header del modal. */

@@ -7,6 +7,10 @@ import { Observable } from 'rxjs';
 import { API_URL } from '../../../core/tokens/api-url.token';
 import type { RespuestaValidarToken } from '../models/menu-cliente-jwt.models';
 import type { InformacionTiendaDto } from '../models/tienda-informacion.models';
+import type {
+  NotificarCarritoOkDto,
+  NotificarCarritoRequestDto,
+} from '../models/notificar-carrito.models';
 import type { ProductoTiendaDto } from '../models/tienda-producto.models';
 
 @Injectable({ providedIn: 'root' })
@@ -50,5 +54,15 @@ export class TiendaApiService {
     return this.http.get<ProductoTiendaDto>(`${this.apiUrl}/tienda/producto`, {
       params,
     });
+  }
+
+  /** Notifica el carrito y dispara el resumen por WhatsApp (JWT en body, sin Authorization). */
+  notificarCarrito(
+    cuerpo: NotificarCarritoRequestDto,
+  ): Observable<NotificarCarritoOkDto> {
+    return this.http.post<NotificarCarritoOkDto>(
+      `${this.apiUrl}/tienda/notificar-carrito`,
+      cuerpo,
+    );
   }
 }

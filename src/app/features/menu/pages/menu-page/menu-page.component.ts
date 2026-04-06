@@ -5,6 +5,7 @@ import {
   Component,
   computed,
   inject,
+  OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
@@ -36,6 +37,10 @@ import {
 } from '../../utils/menu-format.util';
 import { construirPayloadPedidoDesdeCarrito } from '../../utils/menu-pedido-payload.util';
 import {
+  aCuerpoNotificarCarritoApi,
+  mensajeUsuarioNotificarCarrito,
+} from '../../utils/notificar-carrito.util';
+import {
   mapearInformacionAColeccionesMenu,
   reconstruirSeleccionesDesdeIdsCarrito,
   resolverProductoDetalle,
@@ -53,9 +58,10 @@ import {
   styleUrl: './menu-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MenuPageComponent implements OnInit {
+export class MenuPageComponent implements OnInit, OnDestroy {
   private readonly tiendaApi = inject(TiendaApiService);
   private readonly menuCliente = inject(MenuClienteStore);
+  private idTimerAvisoPedido: ReturnType<typeof setTimeout> | null = null;
 
   readonly assetsMenu = MENU_RUTAS_ASSETS;
   readonly formatearPrecioBs = formatearPrecioBs;
@@ -89,6 +95,10 @@ export class MenuPageComponent implements OnInit {
   modalCarritoAbierto = signal(false);
   lineasCarrito = signal<LineaCarrito[]>([]);
   tipoEntrega = signal<TipoEntregaId>('domicilio');
+  /** POST /tienda/notificar-carrito en curso. */
+  enviandoPedido = signal(false);
+  /** Aviso tras confirmar o error (se oculta solo a los pocos segundos). */
+  avisoPedido = signal<{ mensaje: string; esError: boolean } | null>(null);
 
   // ---------------------------------------------------------------------------
   // Código de sucursal del cliente (PH01, PH02…)
@@ -234,6 +244,10 @@ export class MenuPageComponent implements OnInit {
       this.tipoEntrega.set(teJwt);
     }
     void this.cargarInformacion();
+  }
+
+  ngOnDestroy(): void {
+    this.limpiarTimerAvisoPedido();
   }
 
   private async cargarInformacion(): Promise<void> {
@@ -542,14 +556,58 @@ export class MenuPageComponent implements OnInit {
     this.tipoEntrega.set(tipo);
   }
 
-  confirmarPedido(): void {
+  async confirmarPedido(): Promise<void> {
+    if (this.enviandoPedido()) return;
+
+    const token = (this.menuCliente.tokenMenu() ?? '').trim();
+    if (token === '') {
+      this.mostrarAvisoPedido(
+        'No hay sesión válida. Abrí el menú desde el enlace de WhatsApp.',
+        true,
+      );
+      return;
+    }
+
+    const lineas = this.lineasCarrito();
+    if (lineas.length === 0) return;
+
     const payloadPedido = construirPayloadPedidoDesdeCarrito(
-      this.lineasCarrito(),
+      lineas,
       this.tipoEntrega(),
       this.costoEnvioDomicilio(),
-      this.menuCliente.tokenMenu() ?? '',
+      token,
     );
-    console.log('[Menu] Pedido confirmado — payload para servicio', payloadPedido);
-    this.cerrarCarrito();
+    const cuerpo = aCuerpoNotificarCarritoApi(payloadPedido);
+
+    this.enviandoPedido.set(true);
+    try {
+      await firstValueFrom(this.tiendaApi.notificarCarrito(cuerpo));
+      this.lineasCarrito.set([]);
+      this.cerrarCarrito();
+      this.mostrarAvisoPedido(
+        'Listo. Volvé a WhatsApp para ver el resumen del pedido.',
+        false,
+      );
+    } catch (err: unknown) {
+      this.mostrarAvisoPedido(mensajeUsuarioNotificarCarrito(err), true);
+    } finally {
+      this.enviandoPedido.set(false);
+    }
+  }
+
+  private mostrarAvisoPedido(mensaje: string, esError: boolean): void {
+    this.limpiarTimerAvisoPedido();
+    this.avisoPedido.set({ mensaje, esError });
+    this.idTimerAvisoPedido = window.setTimeout(() => {
+      this.avisoPedido.set(null);
+      this.idTimerAvisoPedido = null;
+    }, 8000);
+  }
+
+  private limpiarTimerAvisoPedido(): void {
+    if (this.idTimerAvisoPedido != null) {
+      clearTimeout(this.idTimerAvisoPedido);
+      this.idTimerAvisoPedido = null;
+    }
   }
 }

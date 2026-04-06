@@ -46,6 +46,23 @@
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+.menu-movil__aviso-pedido {
+  margin: 0 var(--espaciado-md) var(--espaciado-sm);
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border-radius: var(--espaciado-2xs);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  background: color-mix(in srgb, var(--colorp-primary) 18%, var(--colorp-tertiary));
+  color: var(--colorp-secondary);
+  border: 1px solid color-mix(in srgb, var(--colorp-primary) 35%, transparent);
+}
+
+.menu-movil__aviso-pedido--error {
+  background: color-mix(in srgb, #a32d2d 22%, var(--colorp-tertiary));
+  border-color: color-mix(in srgb, #a32d2d 45%, transparent);
+}
+
 .menu-movil__cabecera {
   position: sticky;
   top: 0;

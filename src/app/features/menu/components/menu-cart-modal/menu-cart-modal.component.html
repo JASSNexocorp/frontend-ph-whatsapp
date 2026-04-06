@@ -178,9 +178,10 @@
         class="ph-btn-primario cart-modal__cta"
         [class.desactivado]="confirmacionBloqueada()"
         [disabled]="confirmacionBloqueada()"
+        [attr.aria-busy]="enviandoPedido()"
         (click)="confirmar.emit()"
       >
-        <p>Confirmar pedido</p>
+        <p>{{ enviandoPedido() ? 'Enviando…' : 'Confirmar pedido' }}</p>
       </button>
     </div>
   </footer>
