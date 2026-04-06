@@ -1,0 +1,12 @@
+# Despliegue estático de Angular en Netlify.
+# El builder @angular/build deja los assets servibles en .../browser.
+
+[build]
+  command = "npm run build"
+  publish = "dist/frontend-ph-whatsapp/browser"
+
+# SPA: cualquier ruta (p. ej. /menu) debe devolver index.html para que el router de Angular resuelva.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
