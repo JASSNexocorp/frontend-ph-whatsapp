@@ -1,0 +1,98 @@
+<div
+  class="ph-menu-modal"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-labelledby]="idAriaTitulo"
+>
+  <app-menu-modal-shell
+    [titulo]="textoTituloCarrito"
+    [idAriaTitulo]="idAriaTitulo"
+    [rutaLogo]="assets().logo"
+    [rutaIconoVolver]="assets().iconoFlechaIzquierda"
+    [tituloCompacto]="false"
+    (volver)="cerrar.emit()"
+  />
+
+  <div class="cart-modal__cuerpo">
+    <p class="cart-modal__etiqueta">Tipo de entrega</p>
+    <div class="cart-modal__entrega-grid" role="group" aria-label="Tipo de entrega">
+      <button
+        type="button"
+        class="cart-modal__entrega"
+        [class.cart-modal__entrega--activa]="tipoEntrega() === 'domicilio'"
+        (click)="tipoEntregaCambio.emit('domicilio')"
+      >
+        <img [src]="assets().iconoDelivery" width="40" height="40" alt="" class="cart-modal__entrega-img" />
+        <span class="cart-modal__entrega-texto">Domicilio</span>
+      </button>
+      <button
+        type="button"
+        class="cart-modal__entrega"
+        [class.cart-modal__entrega--activa]="tipoEntrega() === 'retiro'"
+        (click)="tipoEntregaCambio.emit('retiro')"
+      >
+        <img [src]="assets().iconoLocal" width="40" height="40" alt="" class="cart-modal__entrega-img" />
+        <span class="cart-modal__entrega-texto">Retiro en local</span>
+      </button>
+    </div>
+
+    @if (lineas().length === 0) {
+      <p class="cart-modal__vacio">Todavía no agregaste productos.</p>
+    } @else {
+      <ul class="cart-modal__lineas">
+        @for (linea of lineas(); track linea.idProducto) {
+          <li class="cart-modal__linea">
+            <div class="cart-modal__linea-top">
+              <div class="cart-modal__linea-info">
+                <p class="cart-modal__linea-nombre">{{ linea.nombre }}</p>
+                <p class="cart-modal__linea-precio">{{ precioLinea(linea) }}</p>
+              </div>
+              <button
+                type="button"
+                class="cart-modal__borrar"
+                (click)="eliminar.emit(linea.idProducto)"
+                [attr.aria-label]="'Quitar ' + linea.nombre"
+              >
+                <img [src]="assets().iconoBorrar" width="22" height="22" alt="" />
+              </button>
+            </div>
+            <div class="cart-modal__linea-ctrl">
+              <button
+                type="button"
+                class="cart-modal__qty-btn"
+                (click)="decrementar.emit(linea.idProducto)"
+                [attr.aria-label]="'Reducir ' + linea.nombre"
+              >
+                −
+              </button>
+              <span class="cart-modal__qty-valor">{{ linea.cantidad }}</span>
+              <button
+                type="button"
+                class="cart-modal__qty-btn"
+                (click)="incrementar.emit(linea.idProducto)"
+                [attr.aria-label]="'Aumentar ' + linea.nombre"
+              >
+                +
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <footer class="cart-modal__pie">
+    <p class="cart-modal__total">
+      Total: <strong>{{ totalFormateado() }}</strong>
+    </p>
+    <button
+      type="button"
+      class="ph-btn-primario cart-modal__cta"
+      [class.desactivado]="lineas().length === 0"
+      [disabled]="lineas().length === 0"
+      (click)="confirmar.emit()"
+    >
+      <p>Confirmar pedido</p>
+    </button>
+  </footer>
+</div>

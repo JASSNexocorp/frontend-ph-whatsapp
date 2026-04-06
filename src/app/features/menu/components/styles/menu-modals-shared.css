@@ -1,0 +1,12 @@
+/* Contenedor pantalla completa compartido por modales del menú */
+
+.ph-menu-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: var(--colorp-secondary);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}

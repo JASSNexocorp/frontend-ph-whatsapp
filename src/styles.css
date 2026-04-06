@@ -1,1 +1,107 @@
-/* You can add global styles to this file, and also import other style files */
+/* Estilos globales y tokens de diseño Pizza Hut — prioridad mobile-first */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --fuente-primary: "League Gothic", sans-serif;
+  --fuente-secondary: "Montserrat", sans-serif;
+
+  /* Colores primarios */
+  --colorp-primary: #c8102e;
+  --colorp-tertiary: #231f20;
+  --colorp-secondary: #ffffff;
+  --colorp-extra: #717171;
+  --colorp-desactivado: #efefef;
+
+  /* Colores de bordes */
+  --colorb-primary: #969696;
+
+  /* Espaciado (usado por botones y layout) */
+  --espaciado-2xs: 0.25rem;
+  --espaciado-xs: 0.5rem;
+  --espaciado-sm: 0.75rem;
+  --espaciado-md: 1rem;
+  --espaciado-lg: 1.25rem;
+  --espaciado-xl: 1.5rem;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--fuente-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--colorp-tertiary);
+  background-color: var(--colorp-secondary);
+}
+
+/* ===== BOTÓN PRIMARIO ===== */
+
+.ph-btn-primario.desactivado,
+.ph-btn-primario {
+  width: 100%;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espaciado-xl);
+  border-radius: var(--espaciado-xs);
+  gap: var(--espaciado-xs);
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  background-color: var(--colorp-secondary);
+}
+
+.ph-btn-primario.desactivado {
+  background-color: var(--colorp-desactivado);
+  cursor: not-allowed;
+}
+
+.ph-btn-primario p {
+  margin: 0;
+  color: var(--colorp-primary);
+  -webkit-text-fill-color: var(--colorp-primary);
+  font-weight: 600;
+  text-align: center;
+}
+
+.ph-btn-primario.desactivado p {
+  color: var(--colorb-primary);
+  -webkit-text-fill-color: var(--colorb-primary);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ===== BOTÓN SECUNDARIO ===== */
+
+.ph-btn-secundario {
+  width: 100%;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espaciado-xl);
+  border-radius: var(--espaciado-xs);
+  background-color: var(--colorp-secondary);
+  border: 1px solid var(--colorp-primary);
+  gap: var(--espaciado-xs);
+  cursor: pointer;
+  font: inherit;
+}
+
+.ph-btn-secundario p {
+  margin: 0;
+  color: var(--colorp-primary);
+  -webkit-text-fill-color: var(--colorp-primary);
+  font-weight: 600;
+  text-align: center;
+}

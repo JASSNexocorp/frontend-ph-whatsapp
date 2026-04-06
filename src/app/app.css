@@ -1,0 +1,6 @@
+/* Shell raíz: ocupa el viewport para vistas mobile tipo app */
+
+:host {
+  display: block;
+  min-height: 100dvh;
+}

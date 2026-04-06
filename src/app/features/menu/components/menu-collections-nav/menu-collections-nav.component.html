@@ -1,0 +1,22 @@
+<nav class="collections-nav" aria-label="Colecciones del menú">
+  <div class="collections-nav__titulo-bloque">
+    <p class="collections-nav__kicker">Armá tu pedido</p>
+    <h2 class="collections-nav__titulo">¿Qué te antojas hoy?</h2>
+    <p class="collections-nav__sub">Elegí una categoría y explorá el menú</p>
+    <span class="collections-nav__raya" aria-hidden="true"></span>
+  </div>
+  <ul class="collections-nav__grid">
+    @for (c of colecciones(); track c.id) {
+      <li class="collections-nav__celda">
+        <button
+          type="button"
+          class="collections-nav__btn"
+          [class.collections-nav__btn--activo]="coleccionActivaId() === c.id"
+          (click)="seleccionar.emit(c.id)"
+        >
+          <p>{{ c.nombre }}</p>
+        </button>
+      </li>
+    }
+  </ul>
+</nav>

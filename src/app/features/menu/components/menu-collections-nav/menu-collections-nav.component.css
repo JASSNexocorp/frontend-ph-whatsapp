@@ -1,0 +1,97 @@
+.collections-nav {
+  background: linear-gradient(180deg, var(--colorp-secondary) 0%, var(--colorp-desactivado) 100%);
+  padding: var(--espaciado-lg) var(--espaciado-md) var(--espaciado-md);
+  border-bottom: 1px solid rgb(0 0 0 / 0.06);
+}
+
+.collections-nav__titulo-bloque {
+  text-align: center;
+  margin-bottom: var(--espaciado-lg);
+}
+
+.collections-nav__kicker {
+  margin: 0 0 var(--espaciado-2xs);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--colorp-primary);
+}
+
+.collections-nav__titulo {
+  margin: 0 0 var(--espaciado-xs);
+  font-family: var(--fuente-primary);
+  font-size: 1.85rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--colorp-tertiary);
+  line-height: 1.05;
+}
+
+.collections-nav__sub {
+  margin: 0 auto;
+  max-width: 16rem;
+  font-size: 0.8125rem;
+  color: var(--colorp-extra);
+  line-height: 1.4;
+}
+
+.collections-nav__raya {
+  display: block;
+  width: 3rem;
+  height: 3px;
+  margin: var(--espaciado-md) auto 0;
+  border-radius: 2px;
+  background: var(--colorp-primary);
+}
+
+.collections-nav__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaciado-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.collections-nav__celda {
+  min-width: 0;
+  display: flex;
+}
+
+.collections-nav__btn {
+  flex: 1;
+  width: 100%;
+  min-height: 3rem;
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border: 2px solid var(--colorp-primary);
+  border-radius: var(--espaciado-xs);
+  background: var(--colorp-secondary);
+  cursor: pointer;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+}
+
+.collections-nav__btn p {
+  margin: 0;
+  color: var(--colorp-primary);
+  -webkit-text-fill-color: var(--colorp-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.collections-nav__btn--activo {
+  background: var(--colorp-primary);
+  box-shadow: 0 4px 14px rgb(200 16 46 / 0.4);
+}
+
+.collections-nav__btn--activo p {
+  color: var(--colorp-secondary);
+  -webkit-text-fill-color: var(--colorp-secondary);
+}

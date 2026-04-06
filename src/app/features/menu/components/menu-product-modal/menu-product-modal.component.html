@@ -1,0 +1,74 @@
+<div
+  class="ph-menu-modal"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-labelledby]="idAriaTitulo"
+>
+  <app-menu-modal-shell
+    [titulo]="producto().nombre"
+    [idAriaTitulo]="idAriaTitulo"
+    [rutaLogo]="assets().logo"
+    [rutaIconoVolver]="assets().iconoFlechaIzquierda"
+    [tituloCompacto]="true"
+    (volver)="volver.emit()"
+  />
+
+  <div class="product-modal__cuerpo">
+    <div class="product-modal__placeholder" aria-hidden="true"></div>
+    <p class="product-modal__precio">{{ producto().precio }}</p>
+    <p class="product-modal__desc">Elegí la cantidad y las opciones que quieras.</p>
+
+    @if ((producto().opciones?.length ?? 0) > 0) {
+      <p class="product-modal__opciones-titulo">Opciones</p>
+      <ul class="product-modal__opciones">
+        @for (op of producto().opciones!; track op.id) {
+          <li>
+            <button
+              type="button"
+              class="product-modal__opcion"
+              (click)="alternarOpcion.emit(op.id)"
+              [attr.aria-pressed]="opcionActiva(op.id)"
+            >
+              <span class="product-modal__opcion-texto">{{ op.etiqueta }}</span>
+              <img
+                [src]="iconoOpcion(op.id)"
+                width="30"
+                height="30"
+                alt=""
+                class="product-modal__opcion-icono"
+              />
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <footer class="product-modal__pie">
+    <div class="product-modal__cantidad">
+      <span class="product-modal__cantidad-label">Cantidad</span>
+      <div class="product-modal__cantidad-ctrl">
+        <button
+          type="button"
+          class="product-modal__qty-btn product-modal__qty-btn--claro"
+          (click)="cantidadDelta.emit(-1)"
+          aria-label="Menos"
+        >
+          −
+        </button>
+        <span class="product-modal__qty-valor">{{ cantidad() }}</span>
+        <button
+          type="button"
+          class="product-modal__qty-btn product-modal__qty-btn--claro"
+          (click)="cantidadDelta.emit(1)"
+          aria-label="Más"
+        >
+          +
+        </button>
+      </div>
+    </div>
+    <button type="button" class="ph-btn-primario product-modal__cta" (click)="agregar.emit()">
+      <p>Agregar al carrito</p>
+    </button>
+  </footer>
+</div>

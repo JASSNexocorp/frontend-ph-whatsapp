@@ -1,0 +1,1050 @@
+---
+description: >
+  Buenas prácticas de frontend profesional y escalabilidad aplicadas a Angular moderno (v17+).
+  Cubre criterios de componentes, arquitectura en capas, CSS escalable, estado, performance,
+  calidad, NgRx Signal Store, HTTP interceptors, formularios, pipes, naming conventions,
+  notificaciones al usuario y lo que NO se debe hacer.
+  Activar cuando se crea, revisa o refactoriza cualquier componente, servicio, store o módulo Angular.
+  Testing: SOLO generar tests si el usuario los pide explícitamente.
+  Logging técnico: SOLO agregar logs de debug si el usuario los pide explícitamente.
+globs:
+  - "**/*.component.ts"
+  - "**/*.component.html"
+  - "**/*.service.ts"
+  - "**/*.store.ts"
+  - "**/*.routes.ts"
+  - "**/*.interceptor.ts"
+  - "**/*.pipe.ts"
+  - "**/*.css"
+alwaysApply: true
+---
+
+# Buenas prácticas frontend — Angular escalable
+
+## Reglas base inamovibles
+
+- **Testing**: NO generar tests salvo que el usuario lo pida explícitamente.
+- **Logging técnico** (`console.log`, `console.error`): NO agregar salvo que el usuario lo pida. Los errores al usuario van por el `ToastService`, no por consola.
+- **NgRx**: siempre usar NgRx Signal Store (moderno) — nunca NgRx clásico con actions/reducers/effects en código nuevo.
+- **Microfrontends**: arquitectura pensada para escalar a ello — routing lazy por feature, bounded contexts claros — pero sin implementarlo salvo que se pida.
+- **Código repetido**: si una pieza de UI aparece en 2+ lugares → extraer componente. Si una transformación aparece en 2+ templates → extraer pipe. Si lógica aparece en 2+ stores/servicios → extraer función de dominio pura.
+- **Prioridad de naming**: esta regla tiene prioridad sobre cualquier otra en nombres de archivos y clases Angular. Archivos en kebab-case inglés, clases en PascalCase inglés. Variables, métodos y comentarios en español.
+
+---
+
+## Estructura de carpetas — obligatoria desde el primer archivo
+
+Todo feature bajo `src/app/features/<nombre>/` respeta esta estructura sin que se pida:
+
+```
+features/
+  <nombre>/
+    constants/
+    data/
+    models/
+    utils/
+    components/
+      <nombre-componente>/
+        <nombre>.component.ts
+        <nombre>.component.html
+        <nombre>.component.css
+    pages/
+      <nombre-page>/
+        <nombre>.component.ts
+        <nombre>.component.html
+        <nombre>.component.css
+```
+
+- Componente de pantalla completa (apuntado por una ruta) → `pages/`
+- Componente reutilizable dentro del feature → `components/`
+- CSS compartido entre componentes del feature → `components/styles/`
+- Nunca un componente suelto en la raíz del feature
+- La estructura se crea completa antes del primer archivo, no después
+
+**Umbrales que obligan a actuar antes de continuar:**
+- `.component.ts` supera 200 líneas → extraer lógica al store
+- `.component.html` supera 150 líneas → extraer componentes
+- `.component.css` supera 150 líneas → revisar separación de componentes
+
+---
+
+## Convención de idiomas
+
+| Qué | Idioma | Ejemplo |
+|---|---|---|
+| Clases, componentes, servicios, pipes | Inglés | `OrderCardComponent`, `AuthService` |
+| Selectores HTML | Inglés | `app-order-card`, `feat-checkout` |
+| Variables, signals, computed, métodos | Español | `ordenes`, `precioTotal`, `estaAbierto` |
+| Parámetros de funciones | Español | `(orden: Order, usuario: User)` |
+| Comentarios de cabecera de archivo | Español | `// Servicio que maneja las órdenes del usuario` |
+| Comentarios internos | Español | `// Filtramos solo las órdenes pendientes` |
+| Marcadores de fase | Español | `// FASE 1: Validación`, `// FASE 2: Transformación` |
+| Mensajes al usuario (Toast, UI) | Español | `'No se pudo guardar. Intentá de nuevo.'` |
+
+---
+
+## Convención de nombres — siempre seguir estas
+
+```
+// Archivos — kebab-case + sufijo (inglés, convención Angular)
+order-card.component.ts
+order-api.service.ts
+order.store.ts
+order.model.ts
+order.routes.ts
+auth.interceptor.ts
+currency-format.pipe.ts
+
+// Clases — PascalCase + sufijo (inglés)
+OrderCardComponent
+OrderApiService
+OrderStore
+AuthInterceptor
+CurrencyFormatPipe
+
+// Selectores — inglés siempre
+app-order-card
+feat-checkout-summary
+
+// Variables, signals, computed, métodos — español
+ordenes = signal<Order[]>([])
+precioTotal = computed(() => ...)
+estaAbierto = signal(false)
+tieneOrdenes = computed(() => ordenes().length > 0)
+usuarioActual = signal<User | null>(null)
+
+// Observables — español con $ al final
+ordenes$ = this.http.get<Order[]>(...)
+usuario$ = this.auth.usuarioActual$
+
+// Parámetros de funciones — español
+crear(nuevaOrden: CreateOrderDto): Observable<Order>
+obtenerPorId(idOrden: string): Observable<Order>
+actualizar(idOrden: string, cambios: Partial<Order>): Observable<Order>
+```
+
+---
+
+## 1. Responsabilidad única (SRP)
+
+Un componente = una responsabilidad. Si el nombre necesita "and" o "with", dividilo.
+
+```typescript
+// MAL — hace demasiado
+@Component({ selector: 'app-user-list-with-filters-and-pagination' })
+
+// BIEN — cada pieza separada
+// UserListComponent     → renderiza la lista
+// UserFiltersComponent  → maneja los filtros
+// PaginationComponent   → maneja la paginación
+```
+
+Los servicios también. Un `UserService` no debería hablar con la API Y manejar
+estado Y formatear datos. Separar en `UserApiService` + `UserStore` + `UserMapper`.
+
+---
+
+## 2. DRY en templates — cuándo extraer un componente
+
+Si un bloque de template aparece en **2 o más lugares**, hay que extraerlo como componente.
+No sobre-componentizar: un bloque que solo aparece una vez y no tiene lógica propia no necesita ser componente.
+
+```
+// Criterios para extraer un componente
+✅ Se repite en 2+ templates
+✅ Tiene lógica propia (estado, interacciones)
+✅ Es lo suficientemente complejo para justificar un archivo propio
+✅ Puede recibir datos via input() y emitir eventos via output()
+
+// NO extraer cuando
+❌ Aparece una sola vez y es markup simple
+❌ El "componente" sería solo un div con clase
+❌ La extracción complica más de lo que simplifica
+```
+
+```typescript
+// MAL — el mismo bloque de tarjeta de usuario repetido en 3 templates distintos
+// <div class="user-card">
+//   <img [src]="usuario.avatar" />
+//   <span>{{ usuario.nombre }}</span>
+//   <span class="badge">{{ usuario.rol }}</span>
+// </div>
+
+// BIEN — un solo componente reutilizable
+@Component({
+  selector: 'app-user-card',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="user-card">
+      <img [src]="usuario().avatar" [alt]="usuario().nombre" />
+      <span>{{ usuario().nombre }}</span>
+      <span class="badge">{{ usuario().rol }}</span>
+    </div>
+  `
+})
+export class UserCardComponent {
+  usuario = input.required<User>()
+}
+```
+
+La misma regla aplica a pipes: si la misma transformación aparece en 2+ templates → pipe standalone.
+
+---
+
+## 3. Standalone components — sin NgModule (Angular 17+)
+
+NgModule es legacy. Todo componente, directiva y pipe nuevo va standalone.
+
+```typescript
+@Component({
+  selector: 'app-order-card',
+  standalone: true,
+  imports: [CurrencyPipe, RouterLink],
+  templateUrl: './order-card.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class OrderCardComponent {
+  orden     = input.required<Order>()
+  ordenSeleccionada = output<string>()
+}
+```
+
+---
+
+## 4. Signals para estado local — no BehaviorSubject (Angular 17+)
+
+`signal()`, `computed()`, `effect()` son estables desde v20. Reemplazan
+`BehaviorSubject` para estado de componente y estado de store simple.
+
+```typescript
+// MAL — boilerplate innecesario para estado local
+private _contador$ = new BehaviorSubject(0)
+contador$ = this._contador$.asObservable()
+
+// BIEN — signals, más simple, más predecible
+contador = signal(0)
+doble    = computed(() => this.contador() * 2)
+
+incrementar() {
+  this.contador.update(n => n + 1)
+}
+```
+
+RxJS sigue siendo la herramienta correcta para **streams** (WebSockets, polling,
+operadores complejos como `switchMap`, `debounceTime`). No reemplazar RxJS
+con signals para todo — usarlos juntos con `toSignal()` / `toObservable()`.
+
+```typescript
+// Combinando RxJS + signals correctamente
+private http            = inject(HttpClient)
+private terminoBusqueda = signal('')
+
+resultados = toSignal(
+  toObservable(this.terminoBusqueda).pipe(
+    debounceTime(300),
+    switchMap(termino => this.http.get<Product[]>(`/api/buscar?q=${termino}`))
+  ),
+  { initialValue: [] }
+)
+```
+
+---
+
+## 5. Control flow moderno — no *ngIf / *ngFor (Angular 17+)
+
+```html
+<!-- MAL — directivas legacy -->
+<div *ngIf="orders$ | async as orders; else loading">
+  <app-order-card *ngFor="let order of orders; trackBy: trackById" [order]="order"/>
+</div>
+<ng-template #loading><app-skeleton /></ng-template>
+
+<!-- BIEN — control flow moderno -->
+@if (ordenes()) {
+  @for (orden of ordenes(); track orden.id) {
+    <app-order-card [orden]="orden" />
+  } @empty {
+    <app-empty-state mensaje="Sin órdenes" />
+  }
+} @else {
+  <app-skeleton />
+}
+```
+
+---
+
+## 6. inject() funcional — no inyección por constructor
+
+```typescript
+// MAL — constructor injection legacy
+constructor(
+  private userService: UserService,
+  private router: Router,
+  private store: UserStore
+) {}
+
+// BIEN — inject() funcional
+private servicioUsuario = inject(UserService)
+private enrutador       = inject(Router)
+private store           = inject(UserStore)
+```
+
+Guards e interceptors también van como funciones, no como clases:
+
+```typescript
+export const guardAutenticacion: CanActivateFn = () => {
+  const autenticacion = inject(AuthService)
+  const enrutador     = inject(Router)
+  return autenticacion.estaAutenticado()
+    ? true
+    : enrutador.createUrlTree(['/login'])
+}
+```
+
+---
+
+## 7. OnPush + Signals — detección de cambios quirúrgica
+
+Todos los componentes nuevos van con `OnPush`. Con signals, Angular actualiza
+solo las partes del template que dependen del signal que cambió.
+
+```typescript
+@Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ProductCardComponent {
+  producto = input.required<Product>()
+}
+```
+
+---
+
+## 8. Arquitectura en capas — dominio / aplicacion / infra / ui
+
+```
+src/
+  app/
+    features/
+      ordenes/                       ← contexto acotado / feature
+        dominio/
+          order.model.ts             ← interfaces, value objects, reglas puras
+          order.mapper.ts            ← transforma respuesta API → dominio
+        aplicacion/
+          order.store.ts             ← estado con signals (capa de aplicación)
+          casos-de-uso/
+            place-order.usecase.ts   ← lógica de negocio pura, sin framework
+        infra/
+          order-api.service.ts       ← HttpClient, endpoints, nada más
+        ui/
+          order-list/
+            order-list.component.ts
+            order-list.component.html
+            order-list.component.css
+          order-card/
+            order-card.component.ts
+```
+
+La capa `dominio/` es TypeScript puro — sin `@Injectable`, sin `HttpClient`,
+testeable sin `TestBed`. La capa `infra/` es la única que toca el exterior.
+
+---
+
+## 9. Vistas diferibles — lazy loading declarativo (Angular 17+)
+
+Para componentes pesados (gráficos, mapas, editores) usar `@defer` en el template.
+
+```html
+@defer (on viewport) {
+  <app-analytics-chart [datos]="datoGrafico()" />
+} @placeholder {
+  <div class="chart-placeholder">Cargando gráfico...</div>
+} @loading (minimum 300ms) {
+  <app-skeleton alto="240px" />
+} @error {
+  <app-error-state mensaje="No se pudo cargar el gráfico" />
+}
+```
+
+---
+
+## 10. Formularios reactivos tipados — sin UntypedFormGroup
+
+```typescript
+// Formulario tipado — el compilador conoce cada campo
+formulario = new FormGroup({
+  email:    new FormControl('', { nonNullable: true, validators: [Validators.email] }),
+  password: new FormControl('', { nonNullable: true, validators: [Validators.minLength(8)] }),
+})
+
+alEnviar() {
+  const { email, password } = this.formulario.getRawValue()
+  // email: string, password: string — TypeScript lo sabe
+}
+```
+
+> **En el horizonte (Angular v21, experimental):** Signal Forms (`@angular/forms/signals`) reescribe
+> la API de formularios sobre signals. Aún no estable — no usar en producción.
+> Cuando se estabilice, reemplazará `FormGroup`/`FormControl` por completo.
+
+---
+
+## 11. CSS co-location — estilos con el componente
+
+Cada componente tiene su propio `.css`. Nada de estilos globales para lógica
+de componente. Lo global es solo para design tokens y reset.
+
+```
+order-card/
+  order-card.component.ts
+  order-card.component.html
+  order-card.component.css   ← scoped automáticamente por Angular
+
+styles/
+  tokens.css       ← variables CSS: colores, espaciado, tipografía
+  reset.css        ← reset base
+  typography.css   ← escala tipográfica
+```
+
+```css
+/* tokens.css — design tokens centralizados */
+:root {
+  --color-primario:    #534AB7;
+  --color-peligro:     #A32D2D;
+  --espacio-md:        16px;
+  --espacio-lg:        24px;
+  --radio-md:          8px;
+  --fuente-cuerpo:     'Inter', sans-serif;
+}
+```
+
+---
+
+## 12. Estados completos en componentes
+
+Todo componente que consume datos asíncronos maneja los 4 estados.
+
+```typescript
+estado  = signal<'inactivo' | 'cargando' | 'exito' | 'error'>('inactivo')
+ordenes = signal<Order[]>([])
+error   = signal<string | null>(null)
+```
+
+```html
+@switch (estado()) {
+  @case ('cargando') { <app-skeleton /> }
+  @case ('error')    { <app-error-state [mensaje]="error()" /> }
+  @case ('exito') {
+    @if (ordenes().length === 0) {
+      <app-empty-state />
+    } @else {
+      @for (orden of ordenes(); track orden.id) {
+        <app-order-card [orden]="orden" />
+      }
+    }
+  }
+}
+```
+
+---
+
+## 13. Accesibilidad (a11y) — no opcional
+
+- Usar roles ARIA semánticos en componentes interactivos
+- Navegación por teclado en modales, dropdowns y formularios
+- `[attr.aria-label]` binding para elementos sin texto visible
+- Contraste mínimo WCAG AA
+
+```html
+<button
+  [attr.aria-expanded]="estaAbierto()"
+  [attr.aria-controls]="idMenu"
+  (keydown.escape)="cerrar()"
+>
+  Menú
+</button>
+```
+
+---
+
+## 14. NgRx Signal Store — estado global moderno
+
+Usar NgRx Signal Store para estado compartido entre features. No usar NgRx clásico
+(actions / reducers / effects) en código nuevo. No usar BehaviorSubject para estado global.
+
+> **Advertencia DevTools:** El Signal Store no tiene soporte nativo para Redux DevTools.
+> Para depurar estado, usar Angular DevTools. Si el proyecto necesita time-travel debugging,
+> evaluar si el NgRx clásico sigue siendo necesario para ese store puntual.
+
+```typescript
+// order.store.ts
+import { signalStore, withState, withMethods, withComputed } from '@ngrx/signals'
+import { rxMethod } from '@ngrx/signals/rxjs-interop'
+import { inject } from '@angular/core'
+
+type EstadoOrdenes = {
+  ordenes:  Order[]
+  estado:   'inactivo' | 'cargando' | 'exito' | 'error'
+  error:    string | null
+}
+
+const estadoInicial: EstadoOrdenes = {
+  ordenes:  [],
+  estado:   'inactivo',
+  error:    null,
+}
+
+export const OrderStore = signalStore(
+  { providedIn: 'root' },
+  withState(estadoInicial),
+
+  withComputed(({ ordenes }) => ({
+    totalOrdenes:      computed(() => ordenes().length),
+    tieneOrdenes:      computed(() => ordenes().length > 0),
+    ordenesPendientes: computed(() => ordenes().filter(o => o.status === 'pending')),
+  })),
+
+  withMethods((store, api = inject(OrderApiService), toast = inject(ToastService)) => ({
+
+    async cargarOrdenes() {
+      // FASE 1: Marcamos como cargando antes del request
+      patchState(store, { estado: 'cargando', error: null })
+      try {
+        // FASE 2: Llamamos a la API y guardamos el resultado
+        const ordenes = await firstValueFrom(api.obtenerTodas())
+        patchState(store, { ordenes, estado: 'exito' })
+      } catch {
+        // FASE 3: Error — mensaje amigable al usuario, nunca técnico
+        const mensajeError = 'No se pudieron cargar las órdenes. Intentá de nuevo.'
+        patchState(store, { estado: 'error', error: mensajeError })
+        toast.error(mensajeError)
+      }
+    },
+
+    async crearOrden(nuevaOrden: CreateOrderDto) {
+      try {
+        const creada = await firstValueFrom(api.crear(nuevaOrden))
+        patchState(store, { ordenes: [...store.ordenes(), creada] })
+        toast.success('Orden creada correctamente.')
+      } catch {
+        toast.error('No se pudo crear la orden. Intentá de nuevo.')
+      }
+    },
+
+    buscarOrdenes: rxMethod<string>(
+      pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap(termino =>
+          api.buscar(termino).pipe(
+            tapResponse({
+              next: ordenes => patchState(store, { ordenes, estado: 'exito' }),
+              error: () => toast.error('No se pudo realizar la búsqueda.')
+            })
+          )
+        )
+      )
+    ),
+  }))
+)
+```
+
+Consumo en el componente:
+
+```typescript
+@Component({ standalone: true, changeDetection: ChangeDetectionStrategy.OnPush })
+export class OrderListComponent {
+  private store = inject(OrderStore)
+
+  ordenes      = this.store.ordenes
+  tieneOrdenes = this.store.tieneOrdenes
+  estado       = this.store.estado
+
+  ngOnInit() { this.store.cargarOrdenes() }
+}
+```
+
+---
+
+## 15. Notificaciones al usuario — ToastService siempre
+
+Todos los errores, éxitos y advertencias que el usuario necesita ver van por
+el `ToastService`. Nunca mostrar errores técnicos al usuario.
+
+```typescript
+// toast.service.ts
+@Injectable({ providedIn: 'root' })
+export class ToastService {
+  private toasts = signal<Toast[]>([])
+  readonly todos  = this.toasts.asReadonly()
+
+  exito(mensaje: string, duracion = 4000) {
+    this.agregar({ tipo: 'exito', mensaje, icono: 'check_circle', duracion })
+  }
+  error(mensaje: string, duracion = 6000) {
+    this.agregar({ tipo: 'error', mensaje, icono: 'error', duracion })
+  }
+  advertencia(mensaje: string, duracion = 5000) {
+    this.agregar({ tipo: 'advertencia', mensaje, icono: 'warning', duracion })
+  }
+  info(mensaje: string, duracion = 4000) {
+    this.agregar({ tipo: 'info', mensaje, icono: 'info', duracion })
+  }
+
+  private agregar(toast: Omit<Toast, 'id'>) {
+    const id = crypto.randomUUID()
+    this.toasts.update(t => [...t, { ...toast, id }])
+  }
+
+  descartar(id: string) {
+    this.toasts.update(t => t.filter(x => x.id !== id))
+  }
+}
+```
+
+```html
+<!-- toast-container.component.html — posición fija superior derecha -->
+<div class="toast-container" role="region" aria-label="Notificaciones">
+  @for (toast of toastService.todos(); track toast.id) {
+    <div
+      class="toast toast--{{ toast.tipo }}"
+      role="alert"
+      (mouseenter)="pausarTimer(toast.id)"
+      (mouseleave)="reanudarTimer(toast.id)"
+    >
+      <span class="toast__icono material-icons">{{ toast.icono }}</span>
+      <span class="toast__mensaje">{{ toast.mensaje }}</span>
+      <button class="toast__cerrar" (click)="toastService.descartar(toast.id)"
+              aria-label="Cerrar notificación">✕</button>
+    </div>
+  }
+</div>
+```
+
+**Regla clave — mensajes amigables, no técnicos:**
+
+```typescript
+// MAL — mensaje técnico al usuario
+toast.error('HttpErrorResponse: 500 Internal Server Error')
+toast.error('Cannot read properties of undefined')
+
+// BIEN — mensaje que el usuario entiende
+toast.error('No se pudo guardar. Verificá tu conexión e intentá de nuevo.')
+toast.exito('Cambios guardados correctamente.')
+toast.advertencia('Tu sesión expira en 5 minutos.')
+```
+
+---
+
+## 16. HTTP Interceptors — centralizados y funcionales
+
+```typescript
+// auth.interceptor.ts — agrega el token a cada request
+export const interceptorAutenticacion: HttpInterceptorFn = (req, next) => {
+  const auth  = inject(AuthService)
+  const token = auth.token()
+
+  if (!token) return next(req)
+
+  return next(req.clone({
+    setHeaders: { Authorization: `Bearer ${token}` }
+  }))
+}
+
+// error.interceptor.ts — maneja errores HTTP globalmente
+export const interceptorError: HttpInterceptorFn = (req, next) => {
+  const toast      = inject(ToastService)
+  const enrutador  = inject(Router)
+  const auth       = inject(AuthService)
+
+  return next(req).pipe(
+    catchError((err: HttpErrorResponse) => {
+      switch (err.status) {
+        case 401:
+          auth.cerrarSesion()
+          enrutador.navigate(['/login'])
+          toast.advertencia('Tu sesión expiró. Iniciá sesión de nuevo.')
+          break
+        case 403:
+          toast.error('No tenés permiso para realizar esta acción.')
+          break
+        case 0:
+          toast.error('Sin conexión. Verificá tu red e intentá de nuevo.')
+          break
+        default:
+          toast.error('Algo salió mal. Intentá de nuevo en unos minutos.')
+      }
+      return throwError(() => err)
+    })
+  )
+}
+
+// loading.interceptor.ts — muestra loading global opcional
+export const interceptorCarga: HttpInterceptorFn = (req, next) => {
+  const cargando = inject(LoadingService)
+  cargando.iniciar()
+  return next(req).pipe(finalize(() => cargando.detener()))
+}
+```
+
+```typescript
+// app.config.ts — registro de interceptors
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideHttpClient(
+      withInterceptors([interceptorAutenticacion, interceptorError, interceptorCarga])
+    ),
+  ]
+}
+```
+
+---
+
+## 17. Validación de formularios — validators custom tipados
+
+```typescript
+// validators/password.validator.ts
+export function validadorPasswordFuerte(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const val = control.value as string
+    if (!val) return null
+    const tieneMayuscula  = /[A-Z]/.test(val)
+    const tieneNumero     = /\d/.test(val)
+    const tieneEspecial   = /[!@#$%^&*]/.test(val)
+    return tieneMayuscula && tieneNumero && tieneEspecial
+      ? null
+      : { passwordFuerte: { tieneMayuscula, tieneNumero, tieneEspecial } }
+  }
+}
+
+// validators/match-fields.validator.ts
+export function validadorCamposCoinciden(campo1: string, campo2: string): ValidatorFn {
+  return (grupo: AbstractControl): ValidationErrors | null => {
+    const a = grupo.get(campo1)?.value
+    const b = grupo.get(campo2)?.value
+    return a === b ? null : { camposNoCoinciden: true }
+  }
+}
+
+// validators/email-taken.validator.ts
+export function validadorEmailOcupado(apiUsuarios: UserApiService): AsyncValidatorFn {
+  return (control: AbstractControl) =>
+    control.valueChanges.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      switchMap(email => apiUsuarios.verificarEmailDisponible(email)),
+      map(disponible => disponible ? null : { emailOcupado: true }),
+      first()
+    )
+}
+```
+
+```typescript
+formulario = new FormGroup({
+  email: new FormControl('', {
+    nonNullable: true,
+    validators:      [Validators.required, Validators.email],
+    asyncValidators: [validadorEmailOcupado(inject(UserApiService))],
+    updateOn:        'blur',
+  }),
+  password: new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.minLength(8), validadorPasswordFuerte()],
+  }),
+  confirmarPassword: new FormControl('', { nonNullable: true }),
+}, {
+  validators: validadorCamposCoinciden('password', 'confirmarPassword'),
+})
+
+erroresEmail = computed(() => {
+  const ctrl = this.formulario.controls.email
+  if (!ctrl.dirty) return null
+  if (ctrl.hasError('required'))    return 'El email es requerido'
+  if (ctrl.hasError('email'))       return 'El formato no es válido'
+  if (ctrl.hasError('emailOcupado')) return 'Este email ya está en uso'
+  return null
+})
+```
+
+```html
+<input [formControl]="formulario.controls.email" type="email" />
+@if (erroresEmail()) {
+  <span class="campo-error" role="alert">{{ erroresEmail() }}</span>
+}
+```
+
+---
+
+## 18. Pipes custom — cuándo y cómo
+
+Crear un pipe cuando la misma transformación se repite en **2+ templates**.
+Siempre standalone, siempre puro salvo que sea absolutamente necesario impuro.
+
+```typescript
+// pipes/time-ago.pipe.ts
+@Pipe({ name: 'tiempoAtras', standalone: true, pure: true })
+export class TimeAgoPipe implements PipeTransform {
+  transform(fecha: Date | string): string {
+    const diff = Date.now() - new Date(fecha).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1)   return 'Ahora mismo'
+    if (mins < 60)  return `Hace ${mins} min`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24)   return `Hace ${hrs} h`
+    return `Hace ${Math.floor(hrs / 24)} días`
+  }
+}
+
+// pipes/order-status.pipe.ts
+@Pipe({ name: 'estadoOrden', standalone: true, pure: true })
+export class OrderStatusPipe implements PipeTransform {
+  private etiquetas: Record<EstadoOrden, string> = {
+    pendiente:  'Pendiente',
+    confirmado: 'Confirmado',
+    enviado:    'En camino',
+    entregado:  'Entregado',
+    cancelado:  'Cancelado',
+  }
+  transform(estado: EstadoOrden): string {
+    return this.etiquetas[estado] ?? estado
+  }
+}
+```
+
+```html
+<span>{{ orden.creadoEn | tiempoAtras }}</span>
+<span class="badge badge--{{ orden.estado }}">{{ orden.estado | estadoOrden }}</span>
+```
+
+**Cuándo NO crear un pipe:**
+- La transformación se usa una sola vez → función en el componente o `computed()`
+- La transformación necesita estado o servicios complejos → método en el store
+
+---
+
+## 19. Routing escalable — lazy por feature
+
+```typescript
+// app.routes.ts — solo las rutas raíz, todo lazy
+export const rutasApp: Routes = [
+  {
+    path: '',
+    redirectTo: 'dashboard',
+    pathMatch: 'full',
+  },
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./features/dashboard/dashboard.component')
+      .then(m => m.DashboardComponent),
+  },
+  {
+    path: 'ordenes',
+    canActivate: [guardAutenticacion],
+    loadChildren: () => import('./features/ordenes/ordenes.routes')
+      .then(m => m.rutasOrdenes),
+  },
+  {
+    path: '**',
+    loadComponent: () => import('./shared/ui/not-found/not-found.component')
+      .then(m => m.NotFoundComponent),
+  },
+]
+
+// features/ordenes/ordenes.routes.ts
+export const rutasOrdenes: Routes = [
+  {
+    path: '',
+    loadComponent: () => import('./ui/order-list/order-list.component')
+      .then(m => m.OrderListComponent),
+  },
+  {
+    path: ':id',
+    loadComponent: () => import('./ui/order-detail/order-detail.component')
+      .then(m => m.OrderDetailComponent),
+    resolve: { orden: resolverOrden },
+  },
+]
+
+// features/ordenes/order.resolver.ts
+export const resolverOrden: ResolveFn<Order> = (ruta) => {
+  const api       = inject(OrderApiService)
+  const toast     = inject(ToastService)
+  const enrutador = inject(Router)
+
+  return api.obtenerPorId(ruta.paramMap.get('id')!).pipe(
+    catchError(() => {
+      toast.error('La orden no existe o no está disponible.')
+      enrutador.navigate(['/ordenes'])
+      return EMPTY
+    })
+  )
+}
+```
+
+---
+
+## Lo que NO aplica en Angular
+
+| Criterio | Por qué no aplica |
+|---|---|
+| **Componentes compuestos (React)** | Angular usa `ng-content` + `ContentChildren`. No copiar la API de React. |
+| **CSS-in-JS** | Angular tiene ViewEncapsulation nativo. Usar `component.css`. |
+| **Error Boundaries (React)** | No existe. El equivalente es `ErrorHandler` global + try/catch en métodos del store. |
+| **DDD táctico completo** | Overkill en frontend salvo enterprise con microfrontends. |
+| **Repositories formales** | Reemplazados por `*ApiService`. Mismo concepto, sin la clase explícita. |
+
+---
+
+## Anti-patrones — lo que NO se debe hacer
+
+### Estado
+```typescript
+// NO — mutar signals directamente
+this.ordenes().push(nuevaOrden)
+
+// SÍ — crear nueva referencia
+this.ordenes.update(prev => [...prev, nuevaOrden])
+```
+
+```typescript
+// NO — BehaviorSubject para estado simple de componente
+private _estaAbierto$ = new BehaviorSubject(false)
+
+// SÍ — signal
+estaAbierto = signal(false)
+```
+
+### Componentes
+```typescript
+// NO — lógica de negocio en el componente
+@Component(...)
+export class OrderListComponent {
+  calcularTotal(ordenes: Order[]) {
+    return ordenes.reduce((acc, o) => acc + o.precio * o.cantidad, 0)
+  }
+}
+
+// SÍ — la lógica va en el dominio o en un caso de uso
+export function calcularTotalOrdenes(ordenes: Order[]): number {
+  return ordenes.reduce((acc, o) => acc + o.precio * o.cantidad, 0)
+}
+```
+
+```typescript
+// NO — prop drilling profundo via input()
+// AbueloComponent → PadreComponent → HijoComponent → NietoComponent
+
+// SÍ — inject() del store en el nivel correcto
+export class NietoComponent {
+  private store = inject(OrderStore)
+}
+```
+
+### CSS
+```css
+/* NO — estilos globales para lógica de componente */
+.order-card { ... }
+
+/* SÍ — en order-card.component.css */
+:host { ... }
+:host(.seleccionado) { ... }
+```
+
+### Templates
+```html
+<!-- NO — lógica compleja en el template -->
+<div *ngIf="usuario && usuario.ordenes && usuario.ordenes.length > 0 && !cargando">
+
+<!-- SÍ — computed signal con nombre semántico -->
+@if (tieneOrdenes()) { ... }
+```
+
+```html
+<!-- NO — @for sin track -->
+@for (orden of ordenes()) { ... }
+
+<!-- SÍ — track siempre por id único -->
+@for (orden of ordenes(); track orden.id) { ... }
+```
+
+### Performance
+```typescript
+// NO — subscribe sin cleanup en componentes
+ngOnInit() {
+  this.service.datos$.subscribe(d => this.datos = d)
+}
+
+// SÍ — toSignal() gestiona el cleanup automáticamente
+datos = toSignal(this.service.datos$, { initialValue: [] })
+
+// O con takeUntilDestroyed
+private refDestruccion = inject(DestroyRef)
+ngOnInit() {
+  this.service.datos$
+    .pipe(takeUntilDestroyed(this.refDestruccion))
+    .subscribe(d => this.datos.set(d))
+}
+```
+
+---
+
+## Checklist rápido antes de hacer PR
+
+**Componente**
+- [ ] `standalone: true`
+- [ ] `ChangeDetectionStrategy.OnPush`
+- [ ] Inputs con `input()` / `input.required()` — no `@Input()`
+- [ ] Outputs con `output()` — no `@Output() EventEmitter`
+- [ ] Inyección con `inject()` — no constructor
+- [ ] Nombre de archivo en kebab-case + sufijo correcto
+- [ ] Selector con prefijo `app-` o `feat-`
+- [ ] Cada componente en su propia subcarpeta dentro de `components/` o `pages/`
+- [ ] Si el bloque de UI se repite en otro template → extraído como componente
+
+**Estructura**
+- [ ] Feature tiene `constants/`, `data/`, `models/`, `utils/`, `components/`, `pages/`
+- [ ] Ningún componente suelto en la raíz del feature
+- [ ] `.component.ts` bajo 200 líneas — si no, extraer al store
+- [ ] `.component.html` bajo 150 líneas — si no, extraer componentes
+- [ ] `.component.css` bajo 150 líneas — si no, revisar separación
+
+**Estado**
+- [ ] Estado local con `signal()` / `computed()` — no BehaviorSubject
+- [ ] Estado global con NgRx Signal Store — no NgRx clásico
+- [ ] Subscriptions con `toSignal()` o `takeUntilDestroyed()` — no leaks
+- [ ] Mutations de signal con `.update()` — nunca mutar directo
+- [ ] Streams complejos dentro del store con `rxMethod`
+
+**Template**
+- [ ] Usa `@if` / `@for` / `@switch` — no `*ngIf` / `*ngFor`
+- [ ] `@for` siempre tiene `track`
+- [ ] Sin lógica compleja en el template — usar `computed()`
+- [ ] Componentes pesados con `@defer`
+
+**Formularios**
+- [ ] `FormGroup` tipado — no `UntypedFormGroup`
+- [ ] Validators custom como funciones puras en `/validators`
+- [ ] Mensajes de error con `computed()` — no en el template
+
+**Errores y notificaciones**
+- [ ] Errores HTTP manejados en `error.interceptor.ts`
+- [ ] Mensajes al usuario via `ToastService` — amigables, no técnicos
+- [ ] Componente maneja los 4 estados: cargando / error / vacío / éxito
+
+**CSS**
+- [ ] CSS en `.component.css` propio — nada específico en `styles.css`
+- [ ] Design tokens con variables CSS — no valores hardcodeados
+- [ ] `:host` para estilos del elemento raíz
+
+**Pipes**
+- [ ] Transformaciones repetidas en 2+ templates → pipe standalone
+- [ ] Pipe marcado como `pure: true` salvo que sea necesario impuro
+
+**Routing**
+- [ ] Rutas cargadas con `loadComponent` o `loadChildren` — siempre lazy
+- [ ] Guards como funciones `CanActivateFn`
+- [ ] Resolvers como funciones `ResolveFn`
+
+**Accesibilidad**
+- [ ] Atributos ARIA en elementos interactivos
+- [ ] Navegación por teclado en modales y dropdowns

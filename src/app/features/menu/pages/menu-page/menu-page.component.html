@@ -1,0 +1,96 @@
+<div class="menu-movil">
+  <header class="menu-movil__cabecera">
+    <div class="menu-movil__marca">
+      <img
+        class="menu-movil__logo-cabecera"
+        [src]="assetsMenu.logo"
+        width="48"
+        height="48"
+        alt=""
+        decoding="async"
+      />
+      <div class="menu-movil__titulos">
+        <p class="menu-movil__nombre-marca">Pizza Hut</p>
+        <p class="menu-movil__subtitulo">Menú</p>
+      </div>
+    </div>
+    <button
+      type="button"
+      class="menu-movil__icono-carrito"
+      aria-label="Abrir carrito"
+      (click)="abrirCarrito()"
+    >
+      <img [src]="assetsMenu.iconoCarrito" width="24" height="24" alt="" />
+      <span class="menu-movil__icono-carrito-badge" aria-hidden="true">{{
+        cantidadItemsCarrito()
+      }}</span>
+    </button>
+  </header>
+
+  <app-menu-collections-nav
+    [colecciones]="colecciones"
+    [coleccionActivaId]="coleccionActivaId()"
+    (seleccionar)="seleccionarColeccion($event)"
+  />
+
+  <main class="menu-movil__principal">
+    @for (c of colecciones; track c.id) {
+      <section
+        class="menu-movil__seccion"
+        [id]="'coleccion-' + c.id"
+        [attr.aria-labelledby]="'titulo-' + c.id"
+      >
+        <h2 class="menu-movil__seccion-titulo" [id]="'titulo-' + c.id">{{ c.nombre }}</h2>
+        <ul class="menu-movil__productos">
+          @for (p of c.productos; track p.id) {
+            <li>
+              <article class="menu-movil__producto" (click)="abrirModalProducto(p)">
+                <div class="menu-movil__producto-placeholder" aria-hidden="true"></div>
+                <div class="menu-movil__producto-datos">
+                  <p class="menu-movil__producto-nombre">{{ p.nombre }}</p>
+                  <p class="menu-movil__producto-precio">{{ p.precio }}</p>
+                </div>
+                <button
+                  type="button"
+                  class="menu-movil__producto-mas"
+                  (click)="abrirModalProducto(p); $event.stopPropagation()"
+                  aria-label="Agregar {{ p.nombre }}"
+                >
+                  +
+                </button>
+              </article>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </main>
+</div>
+
+@if (modalCarritoAbierto()) {
+  <app-menu-cart-modal
+    [lineas]="lineasCarrito()"
+    [tipoEntrega]="tipoEntrega()"
+    [totalFormateado]="totalCarritoFormateado()"
+    [assets]="assetsMenu"
+    (cerrar)="cerrarCarrito()"
+    (tipoEntregaCambio)="seleccionarTipoEntrega($event)"
+    (incrementar)="incrementarLinea($event)"
+    (decrementar)="decrementarLinea($event)"
+    (eliminar)="eliminarLinea($event)"
+    (confirmar)="confirmarPedido()"
+  />
+}
+
+@if (modalProductoAbierto() && productoActivo(); as prod) {
+  <app-menu-product-modal
+    [producto]="prod"
+    [cantidad]="cantidadEnModalProducto()"
+    [idsOpcionesActivas]="idsOpcionesActivas()"
+    [assets]="assetsMenu"
+    (volver)="cerrarModalProducto()"
+    (alternarOpcion)="alternarOpcionProducto($event)"
+    (cantidadDelta)="ajustarCantidadModal($event)"
+    (agregar)="agregarDesdeModalProducto()"
+  />
+}
