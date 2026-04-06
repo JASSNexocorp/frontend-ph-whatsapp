@@ -7,8 +7,23 @@
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.2);
 }
 
-.menu-modal-shell__sup {
-  margin-bottom: var(--espaciado-sm);
+/* Izquierda: logo + título alineados al inicio. Derecha: Volver al extremo derecho */
+.menu-modal-shell__fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--espaciado-sm);
+  min-height: 2.85rem;
+}
+
+.menu-modal-shell__celda--izq {
+  min-width: 0;
+  justify-self: stretch;
+}
+
+.menu-modal-shell__celda--der {
+  justify-self: end;
+  flex-shrink: 0;
 }
 
 .menu-modal-shell__volver {
@@ -24,6 +39,12 @@
   padding: var(--espaciado-xs) var(--espaciado-sm);
   border-radius: 999px;
   font-family: inherit;
+  flex-shrink: 0;
+}
+
+.menu-modal-shell__volver--solo-icono {
+  padding: var(--espaciado-xs);
+  border-radius: var(--espaciado-xs);
 }
 
 .menu-modal-shell__volver img {
@@ -33,13 +54,20 @@
 
 .menu-modal-shell__hero {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: var(--espaciado-md);
-  padding-top: var(--espaciado-2xs);
+  justify-content: flex-start;
+  gap: var(--espaciado-sm);
+  flex-wrap: wrap;
+  text-align: left;
 }
 
 .menu-modal-shell__hero--compacto {
-  align-items: flex-start;
+  align-items: center;
+}
+
+.menu-modal-shell__hero--sin-logo {
+  padding-top: 0;
 }
 
 .menu-modal-shell__logo {
@@ -48,8 +76,8 @@
   object-fit: contain;
   flex-shrink: 0;
   border-radius: var(--espaciado-2xs);
-  background: var(--colorp-secondary);
-  padding: 2px;
+  background: transparent;
+  padding: 0;
 }
 
 .menu-modal-shell__titulo {
@@ -61,9 +89,10 @@
   text-transform: uppercase;
   line-height: 1.1;
   color: var(--colorp-secondary);
+  text-align: left;
+  max-width: 100%;
 }
 
 .menu-modal-shell__hero--compacto .menu-modal-shell__titulo {
   font-size: 1.35rem;
-  padding-top: 0.2rem;
 }

@@ -10,6 +10,8 @@
     [rutaLogo]="assets().logo"
     [rutaIconoVolver]="assets().iconoFlechaIzquierda"
     [tituloCompacto]="false"
+    [mostrarEtiquetaVolver]="true"
+    [ocultarLogoHero]="false"
     (volver)="cerrar.emit()"
   />
 
@@ -39,28 +41,56 @@
     @if (lineas().length === 0) {
       <p class="cart-modal__vacio">Todavía no agregaste productos.</p>
     } @else {
+      <p class="cart-modal__etiqueta cart-modal__etiqueta--seccion">Tu pedido</p>
       <ul class="cart-modal__lineas">
-        @for (linea of lineas(); track linea.idProducto) {
+        @for (linea of lineas(); track linea.idLinea) {
           <li class="cart-modal__linea">
-            <div class="cart-modal__linea-top">
+            <div class="cart-modal__linea-cabecera">
               <div class="cart-modal__linea-info">
                 <p class="cart-modal__linea-nombre">{{ linea.nombre }}</p>
-                <p class="cart-modal__linea-precio">{{ precioLinea(linea) }}</p>
+                @if (linea.etiquetasOpciones.length > 0) {
+                  <ul class="cart-modal__opciones-lista">
+                    @for (et of linea.etiquetasOpciones; track $index) {
+                      <li>{{ et }}</li>
+                    }
+                  </ul>
+                }
+                <div class="cart-modal__linea-precios">
+                  <span class="cart-modal__linea-subtotal">{{ subtotalLinea(linea) }}</span>
+                  @if (mostrarPrecioBase(linea)) {
+                    <span class="cart-modal__linea-base"
+                      >Base {{ subtotalPrecioBaseLinea(linea) }}</span
+                    >
+                  }
+                  @if (subtotalComparacionLinea(linea); as comp) {
+                    <span class="cart-modal__linea-comparacion">{{ comp }}</span>
+                  }
+                </div>
               </div>
-              <button
-                type="button"
-                class="cart-modal__borrar"
-                (click)="eliminar.emit(linea.idProducto)"
-                [attr.aria-label]="'Quitar ' + linea.nombre"
-              >
-                <img [src]="assets().iconoBorrar" width="22" height="22" alt="" />
-              </button>
+              <div class="cart-modal__linea-acciones" role="group" [attr.aria-label]="'Acciones para ' + linea.nombre">
+                <button
+                  type="button"
+                  class="cart-modal__icono-btn cart-modal__icono-btn--editar"
+                  (click)="editar.emit(linea.idLinea)"
+                  [attr.aria-label]="'Editar ' + linea.nombre"
+                >
+                  <img [src]="assets().iconoEditar" width="22" height="22" alt="" />
+                </button>
+                <button
+                  type="button"
+                  class="cart-modal__icono-btn cart-modal__icono-btn--borrar"
+                  (click)="eliminar.emit(linea.idLinea)"
+                  [attr.aria-label]="'Quitar ' + linea.nombre"
+                >
+                  <img [src]="assets().iconoBorrar" width="22" height="22" alt="" />
+                </button>
+              </div>
             </div>
             <div class="cart-modal__linea-ctrl">
               <button
                 type="button"
                 class="cart-modal__qty-btn"
-                (click)="decrementar.emit(linea.idProducto)"
+                (click)="decrementar.emit(linea.idLinea)"
                 [attr.aria-label]="'Reducir ' + linea.nombre"
               >
                 −
@@ -69,7 +99,7 @@
               <button
                 type="button"
                 class="cart-modal__qty-btn"
-                (click)="incrementar.emit(linea.idProducto)"
+                (click)="incrementar.emit(linea.idLinea)"
                 [attr.aria-label]="'Aumentar ' + linea.nombre"
               >
                 +
@@ -82,17 +112,25 @@
   </div>
 
   <footer class="cart-modal__pie">
-    <p class="cart-modal__total">
-      Total: <strong>{{ totalFormateado() }}</strong>
-    </p>
-    <button
-      type="button"
-      class="ph-btn-primario cart-modal__cta"
-      [class.desactivado]="lineas().length === 0"
-      [disabled]="lineas().length === 0"
-      (click)="confirmar.emit()"
-    >
-      <p>Confirmar pedido</p>
-    </button>
+    <div class="cart-modal__pie-fila">
+      <div class="cart-modal__totales-bloque">
+        <p class="cart-modal__total-etiqueta">Total</p>
+        <div class="cart-modal__precios-fila">
+          <strong class="cart-modal__total-valor">{{ totalFormateado() }}</strong>
+          @if (totalComparacionFormateado()) {
+            <span class="cart-modal__total-comparacion">{{ totalComparacionFormateado() }}</span>
+          }
+        </div>
+      </div>
+      <button
+        type="button"
+        class="ph-btn-primario cart-modal__cta"
+        [class.desactivado]="lineas().length === 0"
+        [disabled]="lineas().length === 0"
+        (click)="confirmar.emit()"
+      >
+        <p>Confirmar pedido</p>
+      </button>
+    </div>
   </footer>
 </div>

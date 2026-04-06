@@ -72,12 +72,14 @@
     [lineas]="lineasCarrito()"
     [tipoEntrega]="tipoEntrega()"
     [totalFormateado]="totalCarritoFormateado()"
+    [totalComparacionFormateado]="totalCarritoComparacionFormateado()"
     [assets]="assetsMenu"
     (cerrar)="cerrarCarrito()"
     (tipoEntregaCambio)="seleccionarTipoEntrega($event)"
     (incrementar)="incrementarLinea($event)"
     (decrementar)="decrementarLinea($event)"
     (eliminar)="eliminarLinea($event)"
+    (editar)="editarLineaCarrito($event)"
     (confirmar)="confirmarPedido()"
   />
 }
@@ -85,12 +87,13 @@
 @if (modalProductoAbierto() && productoActivo(); as prod) {
   <app-menu-product-modal
     [producto]="prod"
-    [cantidad]="cantidadEnModalProducto()"
+    [nombreColeccion]="nombreColeccionProductoModal()"
+    [precioFormateado]="precioModalProducto()"
+    [precioComparacionFormateado]="precioComparacionModalProducto()"
     [idsOpcionesActivas]="idsOpcionesActivas()"
     [assets]="assetsMenu"
     (volver)="cerrarModalProducto()"
     (alternarOpcion)="alternarOpcionProducto($event)"
-    (cantidadDelta)="ajustarCantidadModal($event)"
     (agregar)="agregarDesdeModalProducto()"
   />
 }

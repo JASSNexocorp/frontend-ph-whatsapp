@@ -1,15 +1,31 @@
 <header class="menu-modal-shell">
-  <div class="menu-modal-shell__sup">
-    <button type="button" class="menu-modal-shell__volver" (click)="volver.emit()">
-      <img [src]="rutaIconoVolver()" width="22" height="22" alt="" />
-      <span>Volver</span>
-    </button>
-  </div>
-  <div
-    class="menu-modal-shell__hero"
-    [class.menu-modal-shell__hero--compacto]="tituloCompacto()"
-  >
-    <img class="menu-modal-shell__logo" [src]="rutaLogo()" width="40" height="40" alt="" />
-    <h2 class="menu-modal-shell__titulo" [id]="idAriaTitulo()">{{ titulo() }}</h2>
+  <div class="menu-modal-shell__fila">
+    <div class="menu-modal-shell__celda menu-modal-shell__celda--izq">
+      <div
+        class="menu-modal-shell__hero"
+        [class.menu-modal-shell__hero--compacto]="tituloCompacto()"
+        [class.menu-modal-shell__hero--sin-logo]="ocultarLogoHero()"
+      >
+        @if (!ocultarLogoHero()) {
+          <img class="menu-modal-shell__logo" [src]="rutaLogo()" width="40" height="40" alt="" />
+        }
+        <h2 class="menu-modal-shell__titulo" [id]="idAriaTitulo()">{{ titulo() }}</h2>
+      </div>
+    </div>
+
+    <div class="menu-modal-shell__celda menu-modal-shell__celda--der">
+      <button
+        type="button"
+        class="menu-modal-shell__volver"
+        [class.menu-modal-shell__volver--solo-icono]="!mostrarEtiquetaVolver()"
+        (click)="volver.emit()"
+        [attr.aria-label]="mostrarEtiquetaVolver() ? null : etiquetaAccionVolver()"
+      >
+        <img [src]="rutaIconoVolver()" width="22" height="22" alt="" />
+        @if (mostrarEtiquetaVolver()) {
+          <span>Volver</span>
+        }
+      </button>
+    </div>
   </div>
 </header>

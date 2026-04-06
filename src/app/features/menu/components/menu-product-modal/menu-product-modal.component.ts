@@ -1,4 +1,4 @@
-// Modal pantalla completa de detalle de producto: opciones on/off y cantidad.
+// Modal pantalla completa de detalle de producto: opciones on/off y agregar al carrito.
 
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MenuModalShellComponent } from '../menu-modal-shell/menu-modal-shell.component';
@@ -16,13 +16,17 @@ export class MenuProductModalComponent {
   readonly idAriaTitulo = 'titulo-modal-producto';
 
   producto = input.required<ProductoMenuEjemplo>();
-  cantidad = input.required<number>();
+  /** Nombre de la colección a la que pertenece (cabecera del modal). */
+  nombreColeccion = input.required<string>();
+  /** Precio actual con extras de opciones marcadas. */
+  precioFormateado = input.required<string>();
+  /** Precio de comparación tachado (oferta); si no hay, no se muestra. */
+  precioComparacionFormateado = input<string | null>(null);
   idsOpcionesActivas = input.required<string[]>();
   assets = input.required<MenuRutasAssets>();
 
   volver = output<void>();
   alternarOpcion = output<string>();
-  cantidadDelta = output<number>();
   agregar = output<void>();
 
   opcionActiva(id: string): boolean {
@@ -33,5 +37,12 @@ export class MenuProductModalComponent {
     return this.opcionActiva(id)
       ? this.assets().iconoOpcionOn
       : this.assets().iconoOpcionOff;
+  }
+
+  textoDescripcionProducto(): string {
+    const texto = this.producto().descripcion?.trim();
+    return texto && texto.length > 0
+      ? texto
+      : 'Elegí las opciones que quieras; el precio se actualiza abajo.';
   }
 }

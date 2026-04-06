@@ -15,6 +15,12 @@ export class MenuModalShellComponent {
   rutaLogo = input.required<string>();
   rutaIconoVolver = input.required<string>();
   tituloCompacto = input(false);
+  /** Si es false, solo se muestra el icono (p. ej. flecha arriba). */
+  mostrarEtiquetaVolver = input(true);
+  /** Oculta el logo junto al título (modal de producto: solo colección). */
+  ocultarLogoHero = input(false);
+  /** Texto accesible del botón atrás cuando no hay etiqueta visible. */
+  etiquetaAccionVolver = input('Cerrar');
 
   volver = output<void>();
 }

@@ -12,9 +12,19 @@ export const MENU_CATALOGO_COLECCIONES: ColeccionMenuEjemplo[] = [
         nombre: 'Pepperoni Lovers',
         precio: 'Bs. 89',
         precioUnitario: 89,
+        precioComparacionUnitario: 120,
+        descripcion: 'Pizza clásica con pepperoni y mozzarella.',
         opciones: [
-          { id: 'pizzas-pepperoni-extra-queso', etiqueta: 'Extra queso' },
-          { id: 'pizzas-pepperoni-borde-queso', etiqueta: 'Borde de queso' },
+          {
+            id: 'pizzas-pepperoni-extra-queso',
+            etiqueta: 'Extra queso',
+            extraPrecio: 12,
+          },
+          {
+            id: 'pizzas-pepperoni-borde-queso',
+            etiqueta: 'Borde de queso',
+            extraPrecio: 18,
+          },
         ],
       },
       {
@@ -22,8 +32,14 @@ export const MENU_CATALOGO_COLECCIONES: ColeccionMenuEjemplo[] = [
         nombre: 'Suprema',
         precio: 'Bs. 95',
         precioUnitario: 95,
+        precioComparacionUnitario: 125,
+        descripcion: 'Variedad de carnes y vegetales sobre masa tradicional.',
         opciones: [
-          { id: 'pizzas-suprema-sin-cebolla', etiqueta: 'Sin cebolla' },
+          {
+            id: 'pizzas-suprema-sin-cebolla',
+            etiqueta: 'Sin cebolla',
+            extraPrecio: 0,
+          },
         ],
       },
       {
@@ -31,6 +47,7 @@ export const MENU_CATALOGO_COLECCIONES: ColeccionMenuEjemplo[] = [
         nombre: 'Hawaiana',
         precio: 'Bs. 82',
         precioUnitario: 82,
+        descripcion: 'Jamón, piña y el toque dulce que te gusta.',
       },
     ],
   },
@@ -43,8 +60,13 @@ export const MENU_CATALOGO_COLECCIONES: ColeccionMenuEjemplo[] = [
         nombre: 'Palitos de queso',
         precio: 'Bs. 35',
         precioUnitario: 35,
+        descripcion: 'Crujientes por fuera, derretidos por dentro.',
         opciones: [
-          { id: 'entradas-queso-salsa-extra', etiqueta: 'Salsa extra' },
+          {
+            id: 'entradas-queso-salsa-extra',
+            etiqueta: 'Salsa extra',
+            extraPrecio: 5,
+          },
         ],
       },
       {
@@ -52,6 +74,7 @@ export const MENU_CATALOGO_COLECCIONES: ColeccionMenuEjemplo[] = [
         nombre: 'Alitas BBQ',
         precio: 'Bs. 48',
         precioUnitario: 48,
+        descripcion: 'Bañadas en salsa barbacoa.',
       },
     ],
   },

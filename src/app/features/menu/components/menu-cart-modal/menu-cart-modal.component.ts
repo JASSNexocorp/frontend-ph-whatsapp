@@ -20,6 +20,8 @@ export class MenuCartModalComponent {
   lineas = input.required<LineaCarrito[]>();
   tipoEntrega = input.required<TipoEntregaId>();
   totalFormateado = input.required<string>();
+  /** Total de referencia tachado (suma de precios “antes” por línea), si aplica. */
+  totalComparacionFormateado = input<string | null>(null);
   assets = input.required<MenuRutasAssets>();
 
   cerrar = output<void>();
@@ -27,9 +29,24 @@ export class MenuCartModalComponent {
   incrementar = output<string>();
   decrementar = output<string>();
   eliminar = output<string>();
+  editar = output<string>();
   confirmar = output<void>();
 
-  precioLinea(linea: LineaCarrito): string {
+  subtotalLinea(linea: LineaCarrito): string {
     return formatearPrecioBs(linea.precioUnitario * linea.cantidad);
+  }
+
+  subtotalPrecioBaseLinea(linea: LineaCarrito): string {
+    return formatearPrecioBs(linea.precioBaseUnitario * linea.cantidad);
+  }
+
+  subtotalComparacionLinea(linea: LineaCarrito): string | null {
+    if (linea.precioComparacionUnitario == null) return null;
+    return formatearPrecioBs(linea.precioComparacionUnitario * linea.cantidad);
+  }
+
+  /** Muestra bloque de base solo si difiere del precio con opciones. */
+  mostrarPrecioBase(linea: LineaCarrito): boolean {
+    return linea.precioBaseUnitario !== linea.precioUnitario;
   }
 }
