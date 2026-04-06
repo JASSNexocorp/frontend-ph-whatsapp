@@ -2,5 +2,5 @@
 
 export const environment = {
   /** Base del backend (sin barra final). */
-  apiUrl: 'http://localhost:3000',
+  apiUrl: 'https://1487-190-171-228-246.ngrok-free.app',
 };
