@@ -50,6 +50,8 @@ export class MenuPageComponent implements OnInit {
   private readonly menuCliente = inject(MenuClienteStore);
 
   readonly assetsMenu = MENU_RUTAS_ASSETS;
+  /** Expuesto al template para tachar precio de comparación en la grilla. */
+  readonly formatearPrecioBs = formatearPrecioBs;
 
   /** Catálogo cargado desde GET /tienda/informacion. */
   colecciones = signal<ColeccionMenuEjemplo[]>([]);
@@ -131,7 +133,12 @@ export class MenuPageComponent implements OnInit {
     try {
       const info = await firstValueFrom(this.tiendaApi.obtenerInformacion());
       this.informacionTienda.set(info);
-      this.colecciones.set(mapearInformacionAColeccionesMenu(info));
+      this.colecciones.set(
+        mapearInformacionAColeccionesMenu(
+          info,
+          this.menuCliente.nombreSucursal(),
+        ),
+      );
       const primera = this.colecciones()[0]?.id;
       if (primera) {
         this.coleccionActivaId.set(primera);
@@ -191,6 +198,9 @@ export class MenuPageComponent implements OnInit {
   }
 
   abrirModalProducto(producto: ProductoMenuEjemplo): void {
+    if (!producto.disponible) {
+      return;
+    }
     void this.abrirModalProductoInterno(producto, null, []);
   }
 
@@ -205,7 +215,10 @@ export class MenuPageComponent implements OnInit {
       const dto = await firstValueFrom(
         this.tiendaApi.obtenerProductoPorTitulo(productoResumen.nombre),
       );
-      const mapeado = mapearProductoTiendaAUIMenu(dto);
+      const mapeado = mapearProductoTiendaAUIMenu(
+        dto,
+        this.menuCliente.nombreSucursal(),
+      );
       this.productoActivo.set(mapeado);
       const idsValidos = new Set((mapeado.opciones ?? []).map((o) => o.id));
       this.idsOpcionesActivas.set(
@@ -251,7 +264,7 @@ export class MenuPageComponent implements OnInit {
 
   agregarDesdeModalProducto(): void {
     const producto = this.productoActivo();
-    if (!producto) return;
+    if (!producto || !producto.disponible) return;
     const idsOp = [...this.idsOpcionesActivas()];
     const precioUnitario = calcularPrecioUnitarioConOpciones(producto, idsOp);
     const precioBaseUnitario = producto.precioUnitario;

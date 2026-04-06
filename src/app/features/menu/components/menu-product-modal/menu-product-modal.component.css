@@ -66,6 +66,17 @@
   font-size: 0.875rem;
 }
 
+.product-modal__no-disponible {
+  margin: 0 0 var(--espaciado-md);
+  padding: var(--espaciado-sm);
+  border-radius: var(--espaciado-xs);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--colorp-extra);
+  background: rgb(163 45 45 / 0.08);
+  border: 1px solid rgb(163 45 45 / 0.2);
+}
+
 .product-modal__opciones-titulo {
   margin: 0 0 var(--espaciado-sm);
   font-weight: 700;

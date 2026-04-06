@@ -14,7 +14,10 @@ export interface RespuestaValidarTokenOk {
   valido: true;
   clienteId: string;
   tipoEntrega: string;
-  sucursalId: string;
+  /** Identificador de sucursal si el backend lo envía (legacy u otros clientes). */
+  sucursalId?: string;
+  /** Nombre de sucursal para cruzar stock por tienda (GET /tienda/informacion). */
+  nombreSucursal?: string;
   emitidoEn: string | null;
   expiraEn: string | null;
 }

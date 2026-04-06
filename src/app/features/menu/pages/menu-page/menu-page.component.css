@@ -168,6 +168,26 @@
   cursor: pointer;
 }
 
+.menu-movil__producto--inactivo {
+  cursor: not-allowed;
+  opacity: 0.92;
+}
+
+.menu-movil__producto-media {
+  flex-shrink: 0;
+  align-self: center;
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.menu-movil__producto-img {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: cover;
+  border-radius: var(--espaciado-2xs);
+  display: block;
+}
+
 .menu-movil__producto-placeholder {
   width: 3.5rem;
   height: 3.5rem;
@@ -179,24 +199,70 @@
 .menu-movil__producto-datos {
   flex: 1;
   min-width: 0;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .menu-movil__producto-nombre {
   margin: 0;
   font-weight: 600;
   font-size: 0.9375rem;
+  line-height: 1.25;
   color: var(--colorp-tertiary);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  word-break: break-word;
 }
 
-.menu-movil__producto-precio {
+.menu-movil__producto-precios {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
   margin: 0.125rem 0 0;
+}
+
+.menu-movil__producto-precio-compare {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--colorp-extra);
+  text-decoration: line-through;
+}
+
+.menu-movil__producto-precio-actual {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--colorp-primary);
 }
 
+.menu-movil__producto-aviso {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: var(--colorp-extra);
+}
+
+.menu-movil__producto-sin-agregar {
+  flex-shrink: 0;
+  align-self: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--colorp-extra);
+}
+
 .menu-movil__producto-mas {
   flex-shrink: 0;
+  align-self: center;
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--espaciado-2xs);

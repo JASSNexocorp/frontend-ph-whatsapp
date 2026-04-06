@@ -37,6 +37,12 @@
       </div>
     </div>
 
+    @if (!producto().disponible && producto().mensajeNoDisponible) {
+      <p class="product-modal__no-disponible" role="alert">
+        {{ producto().mensajeNoDisponible }}
+      </p>
+    }
+
     @if ((producto().opciones?.length ?? 0) > 0) {
       <p class="product-modal__opciones-titulo">Opciones</p>
       <ul class="product-modal__opciones">
@@ -71,7 +77,12 @@
           <span class="product-modal__precio-comparacion">{{ precioComparacionFormateado() }}</span>
         }
       </div>
-      <button type="button" class="ph-btn-primario product-modal__cta" (click)="agregar.emit()">
+      <button
+        type="button"
+        class="ph-btn-primario product-modal__cta"
+        [disabled]="!producto().disponible"
+        (click)="agregar.emit()"
+      >
         <p>Agregar al carrito</p>
       </button>
     </div>

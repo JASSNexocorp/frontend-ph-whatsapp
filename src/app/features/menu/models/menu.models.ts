@@ -19,6 +19,10 @@ export interface ProductoMenuEjemplo {
   /** Imagen del producto; si falta se muestra un marcador neutro. */
   imagenUrl?: string;
   opciones?: OpcionConfigurableProducto[];
+  /** Si se puede agregar al carrito (estado + stock total + stock en sucursal del JWT). */
+  disponible: boolean;
+  /** Mensaje en catálogo cuando no se puede comprar. */
+  mensajeNoDisponible?: string;
 }
 
 export interface ColeccionMenuEjemplo {

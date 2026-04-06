@@ -12,7 +12,13 @@ export interface ProductoResumenInformacionDto {
   nombre?: string;
   titulo?: string;
   precio?: number;
+  precio_comparacion?: number;
   imagen?: string;
+  id_shopify?: string;
+  id_ofisistema?: string;
+  estado?: boolean;
+  stock_total?: number;
+  sucursales?: { nombre: string; stock: number }[];
   [key: string]: unknown;
 }
 

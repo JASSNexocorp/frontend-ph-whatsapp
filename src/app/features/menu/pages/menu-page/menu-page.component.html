@@ -59,20 +59,64 @@
             <ul class="menu-movil__productos">
               @for (p of c.productos; track p.id) {
                 <li>
-                  <article class="menu-movil__producto" (click)="abrirModalProducto(p)">
-                    <div class="menu-movil__producto-placeholder" aria-hidden="true"></div>
+                  <article
+                    class="menu-movil__producto"
+                    [class.menu-movil__producto--inactivo]="!p.disponible"
+                    (click)="abrirModalProducto(p)"
+                  >
+                    <div class="menu-movil__producto-media">
+                      @if (p.imagenUrl) {
+                        <img
+                          class="menu-movil__producto-img"
+                          [src]="p.imagenUrl"
+                          [alt]="p.nombre"
+                          width="56"
+                          height="56"
+                          decoding="async"
+                          loading="lazy"
+                        />
+                      } @else {
+                        <div
+                          class="menu-movil__producto-placeholder"
+                          aria-hidden="true"
+                        ></div>
+                      }
+                    </div>
                     <div class="menu-movil__producto-datos">
                       <p class="menu-movil__producto-nombre">{{ p.nombre }}</p>
-                      <p class="menu-movil__producto-precio">{{ p.precio }}</p>
+                      <div class="menu-movil__producto-precios">
+                        @if (
+                          p.precioComparacionUnitario != null &&
+                          p.precioComparacionUnitario > 0
+                        ) {
+                          <span class="menu-movil__producto-precio-compare">{{
+                            formatearPrecioBs(p.precioComparacionUnitario)
+                          }}</span>
+                        }
+                        <span class="menu-movil__producto-precio-actual">{{
+                          p.precio
+                        }}</span>
+                      </div>
+                      @if (!p.disponible && p.mensajeNoDisponible) {
+                        <p class="menu-movil__producto-aviso" role="status">
+                          {{ p.mensajeNoDisponible }}
+                        </p>
+                      }
                     </div>
-                    <button
-                      type="button"
-                      class="menu-movil__producto-mas"
-                      (click)="abrirModalProducto(p); $event.stopPropagation()"
-                      aria-label="Agregar {{ p.nombre }}"
-                    >
-                      +
-                    </button>
+                    @if (p.disponible) {
+                      <button
+                        type="button"
+                        class="menu-movil__producto-mas"
+                        (click)="abrirModalProducto(p); $event.stopPropagation()"
+                        aria-label="Agregar {{ p.nombre }}"
+                      >
+                        +
+                      </button>
+                    } @else {
+                      <span class="menu-movil__producto-sin-agregar" aria-hidden="true"
+                        >—</span
+                      >
+                    }
                   </article>
                 </li>
               } @empty {
