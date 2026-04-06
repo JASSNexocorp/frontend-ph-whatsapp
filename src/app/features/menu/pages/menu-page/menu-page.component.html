@@ -147,16 +147,16 @@
   />
 }
 
-@if (modalProductoAbierto() && productoActivo(); as prod) {
+@if (modalProductoAbierto() && productoDetalleActivo(); as detalle) {
   <app-menu-product-modal
-    [producto]="prod"
+    [detalle]="detalle"
+    [selecciones]="seleccionesPorSeccion()"
     [nombreColeccion]="nombreColeccionProductoModal()"
     [precioFormateado]="precioModalProducto()"
     [precioComparacionFormateado]="precioComparacionModalProducto()"
-    [idsOpcionesActivas]="idsOpcionesActivas()"
     [assets]="assetsMenu"
     (volver)="cerrarModalProducto()"
-    (alternarOpcion)="alternarOpcionProducto($event)"
+    (seleccionarOpcion)="seleccionarOpcionSeccion($event.seccionKey, $event.idProducto)"
     (agregar)="agregarDesdeModalProducto()"
   />
 }

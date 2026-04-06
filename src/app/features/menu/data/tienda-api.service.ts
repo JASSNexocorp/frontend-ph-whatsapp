@@ -46,7 +46,7 @@ export class TiendaApiService {
     const headers = new HttpHeaders({
       'Content-Type': 'application/x-www-form-urlencoded',
     });
-    const body = new HttpParams().set('titulo', titulo).toString();
+    const body = new HttpParams().set('titulo', titulo.trim()).toString();
     return this.http.request<ProductoTiendaDto>('GET', url, {
       headers,
       body,

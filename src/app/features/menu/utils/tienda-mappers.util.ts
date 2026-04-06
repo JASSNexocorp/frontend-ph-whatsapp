@@ -1,11 +1,22 @@
 // Mapeo de DTOs de tienda al modelo de UI del menú.
 
-import type { ColeccionMenuEjemplo, ProductoMenuEjemplo } from '../models/menu.models';
+import type {
+  ColeccionMenuEjemplo,
+  ProductoDetalleUI,
+  ProductoMenuEjemplo,
+  ProductoSeccionUI,
+  SeccionProductoUI,
+  SeleccionesPorSeccion,
+} from '../models/menu.models';
 import type {
   InformacionTiendaDto,
   ProductoResumenInformacionDto,
 } from '../models/tienda-informacion.models';
-import type { ProductoTiendaDto } from '../models/tienda-producto.models';
+import type {
+  ProductoMetafieldSeccionDto,
+  ProductoOpcionMetafieldDto,
+  ProductoTiendaDto,
+} from '../models/tienda-producto.models';
 import { formatearPrecioBs } from './menu-format.util';
 import { normalizarUrlImagen } from './menu-url.util';
 
@@ -145,6 +156,143 @@ export function mapearInformacionAColeccionesMenu(
         mapearProductoResumenAUIMenu(p, i, nombreSucursalCliente),
       ),
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Resolución del detalle con secciones
+// ---------------------------------------------------------------------------
+
+const CLAVE_COLECCION_PIZZA = 'Pizzas';
+const CLAVE_SECCION_TAMANO = 'tamano';
+
+/**
+ * Resuelve un producto de sección aplicando:
+ * - disponibilidad en sucursal (código PH01/PH02…)
+ * - criterios_ver si el producto es de una pizza (precios e IDs por tamaño)
+ * - estado (false → bloqueado pero visible)
+ */
+function resolverProductoDeSeccion(
+  op: ProductoOpcionMetafieldDto,
+  seccionKey: string,
+  esPizza: boolean,
+  tamanoSeleccionadoId: string | null,
+  codigoSucursal: string | null,
+): ProductoSeccionUI {
+  // FASE 1: Disponibilidad en la sucursal del cliente
+  const enSucursal =
+    !codigoSucursal || op.sucursales.includes(codigoSucursal);
+
+  // FASE 2: Criterios_ver — solo para pizzas, en secciones que NO son el tamaño
+  let idEfectivo = op.id;
+  let precio = op.precio;
+  let precioComparacion = op.precio_comparacion;
+  let sinCriterio = false;
+
+  const esTamano = seccionKey === CLAVE_SECCION_TAMANO;
+  if (esPizza && !esTamano && op.criterios_ver.length > 0) {
+    if (tamanoSeleccionadoId) {
+      const criterio = op.criterios_ver.find(
+        (c) => c.seccionKey === CLAVE_SECCION_TAMANO && c.opcionId === tamanoSeleccionadoId,
+      );
+      if (criterio) {
+        idEfectivo = criterio.id;
+        precio = criterio.precio;
+        precioComparacion = criterio.precio_comparacion;
+      } else {
+        // No hay criterio para este tamaño → deshabilitado
+        sinCriterio = true;
+      }
+    }
+    // Si no hay tamaño seleccionado todavía, mostramos valores base
+  }
+
+  const bloqueado = !op.estado || !enSucursal || sinCriterio;
+
+  return {
+    id: op.id,
+    idEfectivo,
+    titulo: op.titulo,
+    precio,
+    precioComparacion,
+    imagenUrl: op.urlImage?.trim() ? normalizarUrlImagen(op.urlImage) ?? null : null,
+    bloqueado,
+  };
+}
+
+/**
+ * Procesa una sección del metafield:
+ * - Ignora secciones tipo subcarrito
+ * - Ordena productos por precio asc (bloqueados mantienen su posición relativa)
+ * - Aplica la lógica de criterios_ver y sucursal a cada producto
+ */
+function resolverSeccion(
+  sec: ProductoMetafieldSeccionDto,
+  esPizza: boolean,
+  tamanoSeleccionadoId: string | null,
+  codigoSucursal: string | null,
+): SeccionProductoUI | null {
+  if (sec.tipo === 'subcarrito') return null;
+
+  const productos = sec.productos
+    .map((op) =>
+      resolverProductoDeSeccion(op, sec.key, esPizza, tamanoSeleccionadoId, codigoSucursal),
+    )
+    .sort((a, b) => a.precio - b.precio);
+
+  return {
+    key: sec.key,
+    titulo: sec.titulo,
+    min: sec.min ?? 0,
+    max: sec.max ?? 1,
+    productos,
+  };
+}
+
+/**
+ * Convierte el DTO crudo + selecciones actuales en el modelo UI completo
+ * que consume el modal de detalle de producto.
+ *
+ * Se llama cada vez que el usuario cambia una selección (computed reactivo).
+ */
+export function resolverProductoDetalle(
+  dto: ProductoTiendaDto,
+  selecciones: SeleccionesPorSeccion,
+  codigoSucursal: string | null,
+): ProductoDetalleUI {
+  const esPizza = dto.colecciones?.includes(CLAVE_COLECCION_PIZZA) ?? false;
+  const tamanoSeleccionadoId = selecciones[CLAVE_SECCION_TAMANO]?.[0] ?? null;
+
+  const secciones: SeccionProductoUI[] = (dto.metafield?.secciones ?? [])
+    .map((sec) => resolverSeccion(sec, esPizza, tamanoSeleccionadoId, codigoSucursal))
+    .filter((s): s is SeccionProductoUI => s !== null);
+
+  // Disponibilidad global del producto (igual que el resumen del catálogo)
+  const resumenLike: ProductoResumenInformacionDto = {
+    nombre: dto.nombre,
+    precio: dto.precio,
+    precio_comparacion: dto.precio_comparacion,
+    imagen: dto.imagen,
+    estado: dto.estado,
+    stock_total: dto.stock_total,
+    sucursales: dto.sucursales,
+    id_ofisistema: dto.id_ofisistema,
+    id_shopify: dto.id_shopify,
+  };
+  const { disponible, mensaje } = dto.estado === false
+    ? { disponible: false, mensaje: 'Este producto no está disponible en catálogo.' }
+    : evaluarDisponibilidadProductoResumen(resumenLike, null);
+
+  return {
+    id: dto.id_ofisistema,
+    nombre: dto.nombre,
+    precioBase: dto.precio,
+    precioComparacionBase: dto.precio_comparacion > 0 ? dto.precio_comparacion : null,
+    imagenUrl: normalizarUrlImagen(dto.imagen) ?? null,
+    disponible,
+    mensajeNoDisponible: mensaje,
+    secciones,
+    esPizza,
+  };
 }
 
 /** Convierte el detalle de API en el modelo usado por el modal y el carrito. */

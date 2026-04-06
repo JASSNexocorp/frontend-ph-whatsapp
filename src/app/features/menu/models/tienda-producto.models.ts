@@ -9,6 +9,15 @@ export interface ProductoMetafieldSeccionDto {
   productos: ProductoOpcionMetafieldDto[];
 }
 
+export interface CriterioVerDto {
+  seccionKey: string;
+  opcionId: string;
+  precio: number;
+  precio_comparacion: number;
+  /** ID de ofisistema efectivo para esta combinación tamano+opcion. */
+  id: string;
+}
+
 export interface ProductoOpcionMetafieldDto {
   id: string;
   titulo: string;
@@ -18,7 +27,7 @@ export interface ProductoOpcionMetafieldDto {
   sucursales: string[];
   urlImage: string;
   urlImage2: string;
-  criterios_ver: unknown[];
+  criterios_ver: CriterioVerDto[];
 }
 
 export interface ProductoMetafieldDto {

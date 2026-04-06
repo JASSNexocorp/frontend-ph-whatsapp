@@ -16,15 +16,17 @@
   />
 
   <div class="product-modal__cuerpo">
-    <div class="product-modal__fila-principal">
+
+    <!-- Cabecera: imagen reducida + nombre -->
+    <div class="product-modal__cabecera">
       <div class="product-modal__media">
-        @if (producto().imagenUrl) {
+        @if (detalle().imagenUrl) {
           <img
             class="product-modal__img"
-            [src]="producto().imagenUrl"
-            [alt]="producto().nombre"
-            width="400"
-            height="400"
+            [src]="detalle().imagenUrl"
+            [alt]="detalle().nombre"
+            width="280"
+            height="200"
             decoding="async"
           />
         } @else {
@@ -32,44 +34,78 @@
         }
       </div>
       <div class="product-modal__texto">
-        <h3 class="product-modal__nombre">{{ producto().nombre }}</h3>
-        <p class="product-modal__desc">{{ textoDescripcionProducto() }}</p>
+        <h3 class="product-modal__nombre">{{ detalle().nombre }}</h3>
+        <p class="product-modal__desc">{{ textoDescripcion() }}</p>
       </div>
     </div>
 
-    @if (!producto().disponible && producto().mensajeNoDisponible) {
+    @if (!detalle().disponible && detalle().mensajeNoDisponible) {
       <p class="product-modal__no-disponible" role="alert">
-        {{ producto().mensajeNoDisponible }}
+        {{ detalle().mensajeNoDisponible }}
       </p>
     }
 
-    @if ((producto().opciones?.length ?? 0) > 0) {
-      <p class="product-modal__opciones-titulo">Opciones</p>
-      <ul class="product-modal__opciones">
-        @for (op of producto().opciones!; track op.id) {
-          <li>
-            <button
-              type="button"
-              class="product-modal__opcion"
-              (click)="alternarOpcion.emit(op.id)"
-              [attr.aria-pressed]="opcionActiva(op.id)"
-            >
-              <span class="product-modal__opcion-texto">{{ op.etiqueta }}</span>
-              <img
-                [src]="iconoOpcion(op.id)"
-                width="30"
-                height="30"
-                alt=""
-                class="product-modal__opcion-icono"
-              />
-            </button>
-          </li>
-        }
-      </ul>
+    <!-- Secciones de opciones -->
+    @for (seccion of detalle().secciones; track seccion.key) {
+      <div class="product-modal__seccion">
+        <div class="product-modal__seccion-cabecera">
+          <span class="product-modal__seccion-titulo">{{ seccion.titulo }}</span>
+          <span class="product-modal__seccion-requisito">{{ textoRequisito(seccion) }}</span>
+        </div>
+
+        <ul class="product-modal__opciones" role="list">
+          @for (op of seccion.productos; track op.id) {
+            <li>
+              <button
+                type="button"
+                class="product-modal__opcion"
+                [class.product-modal__opcion--seleccionado]="estaSeleccionado(seccion.key, op.id)"
+                [class.product-modal__opcion--bloqueado]="op.bloqueado"
+                [disabled]="op.bloqueado"
+                [attr.aria-pressed]="!op.bloqueado && estaSeleccionado(seccion.key, op.id)"
+                (click)="onSeleccionarOpcion(seccion.key, op.id)"
+              >
+                @if (op.imagenUrl) {
+                  <img
+                    class="product-modal__opcion-img"
+                    [src]="op.imagenUrl"
+                    [alt]="op.titulo"
+                    width="48"
+                    height="48"
+                    decoding="async"
+                    loading="lazy"
+                  />
+                } @else {
+                  <div class="product-modal__opcion-img-placeholder" aria-hidden="true"></div>
+                }
+                <span class="product-modal__opcion-info">
+                  <span class="product-modal__opcion-nombre">{{ op.titulo }}</span>
+                  <span
+                    class="product-modal__opcion-precio"
+                    [class.product-modal__opcion-precio--gratis]="op.precio === 0"
+                  >{{ textoPrecioOpcion(op.precio) }}</span>
+                </span>
+                <span
+                  class="product-modal__opcion-check"
+                  [class.product-modal__opcion-check--activo]="estaSeleccionado(seccion.key, op.id)"
+                  aria-hidden="true"
+                ></span>
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
     }
+
   </div>
 
+  <!-- Pie fijo -->
   <footer class="product-modal__pie">
+
+    @if (mensajeValidacion()) {
+      <p class="product-modal__validacion" role="alert">{{ mensajeValidacion() }}</p>
+    }
+
     <div class="product-modal__pie-fila">
       <div class="product-modal__precios-bloque">
         <span class="product-modal__precio-actual">{{ precioFormateado() }}</span>
@@ -80,8 +116,8 @@
       <button
         type="button"
         class="ph-btn-primario product-modal__cta"
-        [disabled]="!producto().disponible"
-        (click)="agregar.emit()"
+        [disabled]="!detalle().disponible"
+        (click)="onAgregar()"
       >
         <p>Agregar al carrito</p>
       </button>

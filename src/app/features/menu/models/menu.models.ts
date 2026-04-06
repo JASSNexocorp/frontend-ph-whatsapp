@@ -1,4 +1,4 @@
-// Modelos del dominio del menú móvil (productos, carrito, entrega).
+// Modelos del dominio del menú móvil (productos, secciones, carrito, entrega).
 
 export interface OpcionConfigurableProducto {
   id: string;
@@ -24,6 +24,57 @@ export interface ProductoMenuEjemplo {
   /** Mensaje en catálogo cuando no se puede comprar. */
   mensajeNoDisponible?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Modelos para el modal de detalle con secciones
+// ---------------------------------------------------------------------------
+
+/** Un producto dentro de una sección, con estado resuelto para la UI. */
+export interface ProductoSeccionUI {
+  /** ID de ofisistema base del producto. */
+  id: string;
+  /** ID a enviar al carrito (puede venir de criterios_ver para pizzas). */
+  idEfectivo: string;
+  titulo: string;
+  /** Precio efectivo según criterio activo del tamaño seleccionado. */
+  precio: number;
+  precioComparacion: number;
+  imagenUrl: string | null;
+  /**
+   * true cuando: estado === false, no está en la sucursal del cliente,
+   * o no tiene criterio para el tamaño seleccionado (solo pizzas).
+   */
+  bloqueado: boolean;
+}
+
+/** Sección de opciones del producto (masa, sabor, ingredientes extra, etc.). */
+export interface SeccionProductoUI {
+  key: string;
+  titulo: string;
+  /** Cantidad mínima de selecciones requeridas al agregar al carrito. */
+  min: number;
+  /** Cantidad máxima de selecciones permitidas. */
+  max: number;
+  /** Productos ordenados por precio asc (bloqueados se mantienen en posición). */
+  productos: ProductoSeccionUI[];
+}
+
+/** Modelo completo del detalle de producto usado por el modal. */
+export interface ProductoDetalleUI {
+  id: string;
+  nombre: string;
+  precioBase: number;
+  precioComparacionBase: number | null;
+  imagenUrl: string | null;
+  disponible: boolean;
+  mensajeNoDisponible?: string;
+  secciones: SeccionProductoUI[];
+  /** true si el producto pertenece a la colección "Pizzas". */
+  esPizza: boolean;
+}
+
+/** Selecciones activas por clave de sección: { tamano: ['110110103'], ... } */
+export type SeleccionesPorSeccion = Record<string, string[]>;
 
 export interface ColeccionMenuEjemplo {
   id: string;
