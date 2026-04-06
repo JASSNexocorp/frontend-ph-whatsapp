@@ -40,16 +40,15 @@ export class TiendaApiService {
     return this.http.get<InformacionTiendaDto>(url);
   }
 
-  /** Detalle de producto por nombre/título (contrato del backend con body en GET). */
+  /**
+   * Detalle de producto por nombre/título.
+   * El backend exige `titulo` en la query string (?titulo=...).
+   * No usar body en GET: el navegador puede no enviarlo y Nest/Express no lo lee igual que la query.
+   */
   obtenerProductoPorTitulo(titulo: string): Observable<ProductoTiendaDto> {
-    const url = `${this.apiUrl}/tienda/producto`;
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/x-www-form-urlencoded',
-    });
-    const body = new HttpParams().set('titulo', titulo.trim()).toString();
-    return this.http.request<ProductoTiendaDto>('GET', url, {
-      headers,
-      body,
+    const params = new HttpParams().set('titulo', titulo.trim());
+    return this.http.get<ProductoTiendaDto>(`${this.apiUrl}/tienda/producto`, {
+      params,
     });
   }
 }

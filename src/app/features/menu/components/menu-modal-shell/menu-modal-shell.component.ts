@@ -21,6 +21,10 @@ export class MenuModalShellComponent {
   ocultarLogoHero = input(false);
   /** Texto accesible del botón atrás cuando no hay etiqueta visible. */
   etiquetaAccionVolver = input('Cerrar');
+  /** Línea informativa bajo el título (p. ej. pedido mínimo en el carrito). */
+  detalleBajoTitulo = input<string | null>(null);
+  /** Segunda línea bajo el título, tono de aviso (p. ej. cuánto falta para el mínimo). */
+  alertaBajoTitulo = input<string | null>(null);
 
   volver = output<void>();
 }

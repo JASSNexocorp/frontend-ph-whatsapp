@@ -12,31 +12,53 @@
     [tituloCompacto]="false"
     [mostrarEtiquetaVolver]="true"
     [ocultarLogoHero]="false"
+    [detalleBajoTitulo]="textoPedidoMinimoBajoTitulo()"
+    [alertaBajoTitulo]="textoFaltaMinimoBajoTitulo()"
     (volver)="cerrar.emit()"
   />
 
   <div class="cart-modal__cuerpo">
-    <p class="cart-modal__etiqueta">Tipo de entrega</p>
-    <div class="cart-modal__entrega-grid" role="group" aria-label="Tipo de entrega">
-      <button
-        type="button"
-        class="cart-modal__entrega"
-        [class.cart-modal__entrega--activa]="tipoEntrega() === 'domicilio'"
-        (click)="tipoEntregaCambio.emit('domicilio')"
-      >
-        <img [src]="assets().iconoDelivery" width="40" height="40" alt="" class="cart-modal__entrega-img" />
-        <span class="cart-modal__entrega-texto">Domicilio</span>
-      </button>
-      <button
-        type="button"
-        class="cart-modal__entrega"
-        [class.cart-modal__entrega--activa]="tipoEntrega() === 'retiro'"
-        (click)="tipoEntregaCambio.emit('retiro')"
-      >
-        <img [src]="assets().iconoLocal" width="40" height="40" alt="" class="cart-modal__entrega-img" />
-        <span class="cart-modal__entrega-texto">Retiro en local</span>
-      </button>
-    </div>
+    @if (entregaSoloLectura()) {
+      <p class="cart-modal__etiqueta">Tu entrega</p>
+      <div class="cart-modal__entrega-fija-centro">
+        <div
+          class="cart-modal__entrega cart-modal__entrega--activa cart-modal__entrega--informativa"
+          role="status"
+          [attr.aria-label]="'Entrega: ' + etiquetaEntregaResumen()"
+        >
+          <img
+            [src]="tipoEntrega() === 'domicilio' ? assets().iconoDelivery : assets().iconoLocal"
+            width="40"
+            height="40"
+            alt=""
+            class="cart-modal__entrega-img"
+          />
+          <span class="cart-modal__entrega-texto">{{ etiquetaEntregaResumen() }}</span>
+        </div>
+      </div>
+    } @else {
+      <p class="cart-modal__etiqueta">Tipo de entrega</p>
+      <div class="cart-modal__entrega-grid" role="group" aria-label="Tipo de entrega">
+        <button
+          type="button"
+          class="cart-modal__entrega"
+          [class.cart-modal__entrega--activa]="tipoEntrega() === 'domicilio'"
+          (click)="tipoEntregaCambio.emit('domicilio')"
+        >
+          <img [src]="assets().iconoDelivery" width="40" height="40" alt="" class="cart-modal__entrega-img" />
+          <span class="cart-modal__entrega-texto">Domicilio</span>
+        </button>
+        <button
+          type="button"
+          class="cart-modal__entrega"
+          [class.cart-modal__entrega--activa]="tipoEntrega() === 'retiro'"
+          (click)="tipoEntregaCambio.emit('retiro')"
+        >
+          <img [src]="assets().iconoLocal" width="40" height="40" alt="" class="cart-modal__entrega-img" />
+          <span class="cart-modal__entrega-texto">Retiro en local</span>
+        </button>
+      </div>
+    }
 
     @if (lineas().length === 0) {
       <p class="cart-modal__vacio">Todavía no agregaste productos.</p>
@@ -48,10 +70,17 @@
             <div class="cart-modal__linea-cabecera">
               <div class="cart-modal__linea-info">
                 <p class="cart-modal__linea-nombre">{{ linea.nombre }}</p>
-                @if (linea.etiquetasOpciones.length > 0) {
+                @if (linea.opcionesCarrito.length > 0) {
                   <ul class="cart-modal__opciones-lista">
-                    @for (et of linea.etiquetasOpciones; track $index) {
-                      <li>{{ et }}</li>
+                    @for (grupo of opcionesAgrupadasPorSeccion(linea); track grupo.tituloSeccion) {
+                      <li class="cart-modal__grupo-seccion">
+                        <span class="cart-modal__grupo-seccion-titulo">{{ grupo.tituloSeccion }}</span>
+                        <ul class="cart-modal__grupo-seccion-opciones">
+                          @for (nombre of grupo.nombresOpcion; track $index) {
+                            <li class="cart-modal__grupo-seccion-opcion">{{ nombre }}</li>
+                          }
+                        </ul>
+                      </li>
                     }
                   </ul>
                 }
@@ -112,21 +141,43 @@
   </div>
 
   <footer class="cart-modal__pie">
-    <div class="cart-modal__pie-fila">
-      <div class="cart-modal__totales-bloque">
-        <p class="cart-modal__total-etiqueta">Total</p>
-        <div class="cart-modal__precios-fila">
-          <strong class="cart-modal__total-valor">{{ totalFormateado() }}</strong>
-          @if (totalComparacionFormateado()) {
-            <span class="cart-modal__total-comparacion">{{ totalComparacionFormateado() }}</span>
-          }
+    @if (lineas().length > 0) {
+      <div class="cart-modal__pie-desglose">
+        <div class="cart-modal__desglose-fila">
+          <span>Subtotal (productos)</span>
+          <div class="cart-modal__desglose-subtotal-montos">
+            @if (totalComparacionFormateado(); as ref) {
+              <span class="cart-modal__desglose-comparacion">{{ ref }}</span>
+            }
+            <span class="cart-modal__desglose-monto">{{ subtotalProductosFormateado() }}</span>
+          </div>
+        </div>
+        @if (costoEnvioFormateado(); as envio) {
+          <div class="cart-modal__desglose-fila">
+            <span>Costo de envío (domicilio)</span>
+            <span class="cart-modal__desglose-monto">{{ envio }}</span>
+          </div>
+        }
+        <div class="cart-modal__desglose-fila cart-modal__desglose-fila--total">
+          <span>Total a pagar</span>
+          <strong class="cart-modal__desglose-total">{{ totalFormateado() }}</strong>
         </div>
       </div>
+    }
+    <div class="cart-modal__pie-fila">
+      @if (lineas().length === 0) {
+        <div class="cart-modal__totales-bloque">
+          <p class="cart-modal__total-etiqueta">Total</p>
+          <div class="cart-modal__precios-fila">
+            <strong class="cart-modal__total-valor">{{ totalFormateado() }}</strong>
+          </div>
+        </div>
+      }
       <button
         type="button"
         class="ph-btn-primario cart-modal__cta"
-        [class.desactivado]="lineas().length === 0"
-        [disabled]="lineas().length === 0"
+        [class.desactivado]="confirmacionBloqueada()"
+        [disabled]="confirmacionBloqueada()"
         (click)="confirmar.emit()"
       >
         <p>Confirmar pedido</p>

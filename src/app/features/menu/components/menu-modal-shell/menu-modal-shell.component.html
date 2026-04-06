@@ -9,7 +9,15 @@
         @if (!ocultarLogoHero()) {
           <img class="menu-modal-shell__logo" [src]="rutaLogo()" width="40" height="40" alt="" />
         }
-        <h2 class="menu-modal-shell__titulo" [id]="idAriaTitulo()">{{ titulo() }}</h2>
+        <div class="menu-modal-shell__bloque-titulo">
+          <h2 class="menu-modal-shell__titulo" [id]="idAriaTitulo()">{{ titulo() }}</h2>
+          @if (detalleBajoTitulo(); as detalle) {
+            <p class="menu-modal-shell__detalle-bajo-titulo">{{ detalle }}</p>
+          }
+          @if (alertaBajoTitulo(); as alerta) {
+            <p class="menu-modal-shell__alerta-bajo-titulo" role="alert">{{ alerta }}</p>
+          }
+        </div>
       </div>
     </div>
 

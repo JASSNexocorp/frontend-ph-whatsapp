@@ -172,16 +172,6 @@
   background: rgb(0 0 0 / 0.04);
 }
 
-/* Placeholder cuando no hay imagen */
-.product-modal__opcion-img-placeholder {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 6px;
-  background: rgb(0 0 0 / 0.06);
-  border: 1px dashed rgb(0 0 0 / 0.12);
-}
-
 /* Contenedor nombre + precio */
 .product-modal__opcion-info {
   flex: 1 1 0;
@@ -198,14 +188,29 @@
   line-height: 1.2;
 }
 
+.product-modal__opcion-precios-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.product-modal__opcion-precio-compare {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(0 0 0 / 0.45);
+  text-decoration: line-through;
+}
+
 .product-modal__opcion-precio {
   font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--colorp-extra);
+  font-weight: 700;
+  color: #c62828;
 }
 
 .product-modal__opcion-precio--gratis {
-  color: #2e7d32;
+  color: #b71c1c;
+  font-weight: 600;
 }
 
 /* Check visual (círculo) */

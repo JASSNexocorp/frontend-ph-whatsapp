@@ -75,15 +75,18 @@
                     decoding="async"
                     loading="lazy"
                   />
-                } @else {
-                  <div class="product-modal__opcion-img-placeholder" aria-hidden="true"></div>
                 }
                 <span class="product-modal__opcion-info">
                   <span class="product-modal__opcion-nombre">{{ op.titulo }}</span>
-                  <span
-                    class="product-modal__opcion-precio"
-                    [class.product-modal__opcion-precio--gratis]="op.precio === 0"
-                  >{{ textoPrecioOpcion(op.precio) }}</span>
+                  <span class="product-modal__opcion-precios-fila">
+                    @if (textoPrecioComparacionOpcion(op); as comp) {
+                      <span class="product-modal__opcion-precio-compare">{{ comp }}</span>
+                    }
+                    <span
+                      class="product-modal__opcion-precio"
+                      [class.product-modal__opcion-precio--gratis]="op.precio === 0"
+                    >{{ textoPrecioOpcion(op.precio) }}</span>
+                  </span>
                 </span>
                 <span
                   class="product-modal__opcion-check"

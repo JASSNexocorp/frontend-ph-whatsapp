@@ -82,10 +82,18 @@ export interface ColeccionMenuEjemplo {
   productos: ProductoMenuEjemplo[];
 }
 
+/** Una fila de opción en el carrito: sección y producto elegido por separado en la UI. */
+export interface OpcionLineaCarrito {
+  tituloSeccion: string;
+  nombreOpcion: string;
+}
+
 export interface LineaCarrito {
   /** Identificador único de la fila (mismo producto puede repetirse con distintas opciones). */
   idLinea: string;
   idProducto: string;
+  /** Variante / producto en Shopify (mismo origen que GET /tienda/producto). */
+  idShopify: string;
   nombre: string;
   /** Precio unitario con opciones / extras aplicados. */
   precioUnitario: number;
@@ -94,10 +102,10 @@ export interface LineaCarrito {
   cantidad: number;
   /** Precio unitario de comparación (oferta tachada), si existe en catálogo. */
   precioComparacionUnitario?: number;
-  /** Ids de opciones activas al agregar o editar. */
+  /** Ids efectivos (ofisistema / criterio) al confirmar pedido. */
   idsOpcionesSeleccionadas: string[];
-  /** Etiquetas para mostrar en el carrito. */
-  etiquetasOpciones: string[];
+  /** Opciones elegidas: sección y nombre de producto por ítem. */
+  opcionesCarrito: OpcionLineaCarrito[];
 }
 
 export type TipoEntregaId = 'domicilio' | 'retiro';

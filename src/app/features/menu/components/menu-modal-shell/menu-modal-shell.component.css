@@ -55,11 +55,20 @@
 .menu-modal-shell__hero {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
   gap: var(--espaciado-sm);
   flex-wrap: wrap;
   text-align: left;
+}
+
+.menu-modal-shell__bloque-titulo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaciado-2xs);
+  min-width: 0;
+  flex: 1;
 }
 
 .menu-modal-shell__hero--compacto {
@@ -73,11 +82,32 @@
 .menu-modal-shell__logo {
   width: 2.5rem;
   height: 2.5rem;
+  margin-top: 0.2rem;
   object-fit: contain;
   flex-shrink: 0;
   border-radius: var(--espaciado-2xs);
   background: transparent;
   padding: 0;
+}
+
+.menu-modal-shell__detalle-bajo-titulo {
+  margin: 0;
+  max-width: 100%;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 0.88);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.menu-modal-shell__alerta-bajo-titulo {
+  margin: 0;
+  max-width: 100%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #ffc6c9;
 }
 
 .menu-modal-shell__titulo {

@@ -19,6 +19,7 @@ import { TiendaApiService } from '../../data/tienda-api.service';
 import type {
   ColeccionMenuEjemplo,
   LineaCarrito,
+  OpcionLineaCarrito,
   ProductoDetalleUI,
   ProductoMenuEjemplo,
   SeleccionesPorSeccion,
@@ -26,13 +27,17 @@ import type {
 } from '../../models/menu.models';
 import type { InformacionTiendaDto } from '../../models/tienda-informacion.models';
 import type { ProductoTiendaDto } from '../../models/tienda-producto.models';
+import { normalizarTipoEntregaJwt } from '../../utils/menu-entrega.util';
 import {
+  calcularPrecioComparacionTotalDetalle,
   calcularPrecioTotalDetalle,
   firmaLineaCarrito,
   formatearPrecioBs,
 } from '../../utils/menu-format.util';
+import { construirPayloadPedidoDesdeCarrito } from '../../utils/menu-pedido-payload.util';
 import {
   mapearInformacionAColeccionesMenu,
+  reconstruirSeleccionesDesdeIdsCarrito,
   resolverProductoDetalle,
 } from '../../utils/tienda-mappers.util';
 
@@ -127,10 +132,15 @@ export class MenuPageComponent implements OnInit {
     );
   });
 
+  /** Total tachado: comparación del producto (si aplica) + opciones; pizzas solo secciones. */
   readonly precioComparacionModalProducto = computed((): string | null => {
     const detalle = this.productoDetalleActivo();
-    if (detalle?.precioComparacionBase == null) return null;
-    return formatearPrecioBs(detalle.precioComparacionBase);
+    if (!detalle) return null;
+    const total = calcularPrecioComparacionTotalDetalle(
+      detalle,
+      this.seleccionesPorSeccion(),
+    );
+    return total != null ? formatearPrecioBs(total) : null;
   });
 
   // ---------------------------------------------------------------------------
@@ -152,6 +162,54 @@ export class MenuPageComponent implements OnInit {
     formatearPrecioBs(this.totalCarrito()),
   );
 
+  /** El JWT fija domicilio/retiro: no se puede cambiar desde el carrito. */
+  readonly tipoEntregaFijadoPorToken = computed(
+    () => normalizarTipoEntregaJwt(this.menuCliente.tipoEntrega()) !== null,
+  );
+
+  readonly costoEnvioDomicilio = computed(() => {
+    const cfg = this.informacionTienda()?.configuracion_carrito;
+    return cfg?.costo_envio_domicilio ?? 0;
+  });
+
+  readonly pedidoMinimoMonto = computed(
+    () => this.informacionTienda()?.configuracion_carrito?.cantidad_minima ?? 0,
+  );
+
+  readonly totalAPagarCarrito = computed(() => {
+    const sub = this.totalCarrito();
+    const envio =
+      this.tipoEntrega() === 'domicilio' ? this.costoEnvioDomicilio() : 0;
+    return sub + envio;
+  });
+
+  readonly totalAPagarCarritoFormateado = computed(() =>
+    formatearPrecioBs(this.totalAPagarCarrito()),
+  );
+
+  readonly costoEnvioFormateadoParaCarrito = computed((): string | null => {
+    if (this.tipoEntrega() !== 'domicilio') return null;
+    return formatearPrecioBs(this.costoEnvioDomicilio());
+  });
+
+  readonly cumplePedidoMinimo = computed(
+    () => this.totalCarrito() >= this.pedidoMinimoMonto(),
+  );
+
+  readonly faltaParaPedidoMinimoFormateado = computed((): string | null => {
+    const min = this.pedidoMinimoMonto();
+    if (min <= 0) return null;
+    const sub = this.totalCarrito();
+    if (sub >= min) return null;
+    return formatearPrecioBs(min - sub);
+  });
+
+  readonly pedidoMinimoFormateado = computed((): string | null => {
+    const min = this.pedidoMinimoMonto();
+    if (min <= 0) return null;
+    return formatearPrecioBs(min);
+  });
+
   readonly totalCarritoComparacionFormateado = computed((): string | null => {
     const suma = this.lineasCarrito().reduce((acc, l) => {
       if (l.precioComparacionUnitario == null) return acc;
@@ -171,9 +229,9 @@ export class MenuPageComponent implements OnInit {
   // ---------------------------------------------------------------------------
 
   ngOnInit(): void {
-    const te = this.menuCliente.tipoEntrega();
-    if (te === 'domicilio' || te === 'retiro') {
-      this.tipoEntrega.set(te);
+    const teJwt = normalizarTipoEntregaJwt(this.menuCliente.tipoEntrega());
+    if (teJwt) {
+      this.tipoEntrega.set(teJwt);
     }
     void this.cargarInformacion();
   }
@@ -252,13 +310,12 @@ export class MenuPageComponent implements OnInit {
 
   abrirModalProducto(producto: ProductoMenuEjemplo): void {
     if (!producto.disponible) return;
-    void this.abrirModalProductoInterno(producto.nombre, null, {});
+    void this.abrirModalProductoInterno(producto.nombre, null);
   }
 
   private async abrirModalProductoInterno(
     nombreProducto: string,
     idLineaEdicion: string | null,
-    seleccionesIniciales: SeleccionesPorSeccion,
   ): Promise<void> {
     this.lineaEditandoId.set(idLineaEdicion);
     this.fijarScrollDocumento(true);
@@ -268,20 +325,32 @@ export class MenuPageComponent implements OnInit {
       );
       this.dtoProdutoActivo.set(dto);
 
-      // Pre-selección automática del primer tamaño para productos de la colección Pizzas
-      const selecciones = { ...seleccionesIniciales };
+      let selecciones: SeleccionesPorSeccion = {};
+      if (idLineaEdicion) {
+        const linea = this.lineasCarrito().find((l) => l.idLinea === idLineaEdicion);
+        if (linea) {
+          selecciones = reconstruirSeleccionesDesdeIdsCarrito(
+            dto,
+            linea.idsOpcionesSeleccionadas,
+            this.codigoSucursalCliente(),
+          );
+        }
+      }
+
       if (dto.colecciones?.includes('Pizzas')) {
         const secTamano = dto.metafield?.secciones?.find((s) => s.key === 'tamano');
         if (secTamano && !selecciones['tamano']?.length) {
           const primeroDesbloqueado = secTamano.productos.find((p) => p.estado);
           if (primeroDesbloqueado) {
-            selecciones['tamano'] = [primeroDesbloqueado.id];
+            selecciones = {
+              ...selecciones,
+              tamano: [primeroDesbloqueado.id],
+            };
           }
         }
       }
       this.seleccionesPorSeccion.set(selecciones);
     } catch {
-      // Si falla la carga del detalle, igual abrimos el modal sin secciones
       this.dtoProdutoActivo.set(null);
       this.seleccionesPorSeccion.set({});
     }
@@ -297,8 +366,8 @@ export class MenuPageComponent implements OnInit {
   }
 
   /**
-   * Alterna la selección de un producto dentro de una sección,
-   * respetando el máximo permitido (no valida mínimo aquí).
+   * Alterna la selección de un producto dentro de una sección.
+   * Si la sección tiene min ≥ 1, no se puede deseleccionar por debajo de ese mínimo.
    */
   seleccionarOpcionSeccion(seccionKey: string, idProducto: string): void {
     const detalle = this.productoDetalleActivo();
@@ -315,16 +384,17 @@ export class MenuPageComponent implements OnInit {
       const yaSeleccionado = actuales.includes(idProducto);
 
       if (yaSeleccionado) {
-        // Deseleccionar siempre es posible (el mínimo solo se valida al agregar)
-        return { ...sel, [seccionKey]: actuales.filter((id) => id !== idProducto) };
+        const despuesDeQuitar = actuales.filter((id) => id !== idProducto);
+        if (despuesDeQuitar.length < seccion.min) {
+          return sel;
+        }
+        return { ...sel, [seccionKey]: despuesDeQuitar };
       }
 
       if (actuales.length >= seccion.max) {
         if (seccion.max === 1) {
-          // Sección de selección única: reemplazar
           return { ...sel, [seccionKey]: [idProducto] };
         }
-        // Máximo alcanzado, no agregar
         return sel;
       }
 
@@ -337,17 +407,22 @@ export class MenuPageComponent implements OnInit {
   // ---------------------------------------------------------------------------
 
   agregarDesdeModalProducto(): void {
+    const dto = this.dtoProdutoActivo();
     const detalle = this.productoDetalleActivo();
-    if (!detalle || !detalle.disponible) return;
+    if (!dto || !detalle || !detalle.disponible) return;
 
     const selecciones = this.seleccionesPorSeccion();
     const precioUnitario = calcularPrecioTotalDetalle(detalle, selecciones);
-    const precioBaseUnitario = detalle.precioBase;
-    const precioComparacionUnitario = detalle.precioComparacionBase ?? undefined;
+    const precioBaseUnitario = detalle.esPizza
+      ? precioUnitario
+      : detalle.precioBase;
+    const precioComparacionUnitario = calcularPrecioComparacionTotalDetalle(
+      detalle,
+      selecciones,
+    );
 
-    // Recopilar IDs efectivos y etiquetas de cada selección
     const idsEfectivos: string[] = [];
-    const etiquetas: string[] = [];
+    const opcionesCarrito: OpcionLineaCarrito[] = [];
 
     for (const seccion of detalle.secciones) {
       const idsSeleccionados = selecciones[seccion.key] ?? [];
@@ -355,7 +430,10 @@ export class MenuPageComponent implements OnInit {
         const prod = seccion.productos.find((p) => p.id === idSel);
         if (!prod || prod.bloqueado) continue;
         idsEfectivos.push(prod.idEfectivo);
-        etiquetas.push(`${seccion.titulo}: ${prod.titulo}`);
+        opcionesCarrito.push({
+          tituloSeccion: seccion.titulo,
+          nombreOpcion: prod.titulo,
+        });
       }
     }
 
@@ -366,11 +444,12 @@ export class MenuPageComponent implements OnInit {
           l.idLinea === idEdicion
             ? {
                 ...l,
+                idShopify: dto.id_shopify,
                 precioUnitario,
                 precioBaseUnitario,
                 precioComparacionUnitario,
                 idsOpcionesSeleccionadas: idsEfectivos,
-                etiquetasOpciones: etiquetas,
+                opcionesCarrito,
               }
             : l,
         ),
@@ -390,25 +469,27 @@ export class MenuPageComponent implements OnInit {
         const nueva: LineaCarrito = {
           idLinea: crypto.randomUUID(),
           idProducto: detalle.id,
+          idShopify: dto.id_shopify,
           nombre: detalle.nombre,
           precioUnitario,
           precioBaseUnitario,
           cantidad: 1,
           precioComparacionUnitario,
           idsOpcionesSeleccionadas: idsEfectivos,
-          etiquetasOpciones: etiquetas,
+          opcionesCarrito,
         };
         return [...lineas, nueva];
       }
       const copia = [...lineas];
       copia[idx] = {
         ...copia[idx],
+        idShopify: dto.id_shopify,
         cantidad: copia[idx].cantidad + 1,
         precioUnitario,
         precioBaseUnitario,
         precioComparacionUnitario,
         idsOpcionesSeleccionadas: idsEfectivos,
-        etiquetasOpciones: etiquetas,
+        opcionesCarrito,
       };
       return copia;
     });
@@ -425,8 +506,7 @@ export class MenuPageComponent implements OnInit {
     const producto = this.buscarProductoPorId(linea.idProducto);
     if (!producto) return;
     this.modalCarritoAbierto.set(false);
-    // Reconstruimos selecciones básicas desde las etiquetas guardadas
-    void this.abrirModalProductoInterno(producto.nombre, idLinea, {});
+    void this.abrirModalProductoInterno(producto.nombre, idLinea);
   }
 
   // ---------------------------------------------------------------------------
@@ -458,10 +538,18 @@ export class MenuPageComponent implements OnInit {
   }
 
   seleccionarTipoEntrega(tipo: TipoEntregaId): void {
+    if (this.tipoEntregaFijadoPorToken()) return;
     this.tipoEntrega.set(tipo);
   }
 
   confirmarPedido(): void {
+    const payloadPedido = construirPayloadPedidoDesdeCarrito(
+      this.lineasCarrito(),
+      this.tipoEntrega(),
+      this.costoEnvioDomicilio(),
+      this.menuCliente.tokenMenu() ?? '',
+    );
+    console.log('[Menu] Pedido confirmado — payload para servicio', payloadPedido);
     this.cerrarCarrito();
   }
 }

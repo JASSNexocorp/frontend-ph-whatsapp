@@ -4,8 +4,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
-  inject,
   input,
   OnDestroy,
   output,
@@ -15,6 +13,7 @@ import { MenuModalShellComponent } from '../menu-modal-shell/menu-modal-shell.co
 import type {
   MenuRutasAssets,
   ProductoDetalleUI,
+  ProductoSeccionUI,
   SeccionProductoUI,
   SeleccionesPorSeccion,
 } from '../../models/menu.models';
@@ -34,7 +33,8 @@ export class MenuProductModalComponent implements OnDestroy {
   selecciones = input.required<SeleccionesPorSeccion>();
   nombreColeccion = input.required<string>();
   precioFormateado = input.required<string>();
-  precioComparacionFormateado = input<string | null>(null);
+  /** Total de comparación (tachado); `null` si no aplica. Siempre enlazado desde la página. */
+  precioComparacionFormateado = input.required<string | null>();
   assets = input.required<MenuRutasAssets>();
 
   volver = output<void>();
@@ -44,8 +44,6 @@ export class MenuProductModalComponent implements OnDestroy {
   /** Mensaje de validación temporal (min no cumplido). Vacío = no se muestra. */
   mensajeValidacion = signal('');
   private _timerValidacion: ReturnType<typeof setTimeout> | null = null;
-
-  private readonly destroyRef = inject(DestroyRef);
 
   ngOnDestroy(): void {
     if (this._timerValidacion) clearTimeout(this._timerValidacion);
@@ -78,6 +76,14 @@ export class MenuProductModalComponent implements OnDestroy {
 
   textoPrecioOpcion(precio: number): string {
     return precio === 0 ? 'Sin costo adicional' : `+ Bs. ${precio}`;
+  }
+
+  /** Precio de comparación tachado para la opción, si aplica. */
+  textoPrecioComparacionOpcion(op: ProductoSeccionUI): string | null {
+    if (op.precioComparacion > 0) {
+      return `Bs. ${op.precioComparacion}`;
+    }
+    return null;
   }
 
   // ---------------------------------------------------------------------------

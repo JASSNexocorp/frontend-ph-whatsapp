@@ -295,6 +295,72 @@ export function resolverProductoDetalle(
   };
 }
 
+/**
+ * Al editar una línea del carrito, restaura las selecciones del modal a partir de los
+ * id efectivos guardados (incluye criterios_ver de pizzas).
+ */
+export function reconstruirSeleccionesDesdeIdsCarrito(
+  dto: ProductoTiendaDto,
+  idsEfectivosGuardados: string[],
+  codigoSucursal: string | null,
+): SeleccionesPorSeccion {
+  const set = new Set(idsEfectivosGuardados);
+  const esPizza = dto.colecciones?.includes(CLAVE_COLECCION_PIZZA) ?? false;
+
+  let tamanoId: string | null = null;
+  const seccionesDto = dto.metafield?.secciones ?? [];
+  const secTamano = seccionesDto.find((s) => s.key === CLAVE_SECCION_TAMANO);
+
+  if (esPizza && secTamano) {
+    for (const op of secTamano.productos) {
+      const ui = resolverProductoDeSeccion(
+        op,
+        CLAVE_SECCION_TAMANO,
+        esPizza,
+        null,
+        codigoSucursal,
+      );
+      if (set.has(ui.idEfectivo)) {
+        tamanoId = op.id;
+        break;
+      }
+    }
+    if (tamanoId == null) {
+      const primeroActivo = secTamano.productos.find((p) => p.estado);
+      if (primeroActivo) tamanoId = primeroActivo.id;
+    }
+  }
+
+  const resultado: SeleccionesPorSeccion = {};
+  if (tamanoId != null) {
+    resultado[CLAVE_SECCION_TAMANO] = [tamanoId];
+  }
+
+  for (const sec of seccionesDto) {
+    if (sec.tipo === 'subcarrito') continue;
+    if (sec.key === CLAVE_SECCION_TAMANO) continue;
+
+    const idsEnSeccion: string[] = [];
+    for (const op of sec.productos) {
+      const ui = resolverProductoDeSeccion(
+        op,
+        sec.key,
+        esPizza,
+        esPizza ? tamanoId : null,
+        codigoSucursal,
+      );
+      if (set.has(ui.idEfectivo) && !ui.bloqueado) {
+        idsEnSeccion.push(op.id);
+      }
+    }
+    if (idsEnSeccion.length > 0) {
+      resultado[sec.key] = idsEnSeccion;
+    }
+  }
+
+  return resultado;
+}
+
 /** Convierte el detalle de API en el modelo usado por el modal y el carrito. */
 export function mapearProductoTiendaAUIMenu(
   dto: ProductoTiendaDto,
