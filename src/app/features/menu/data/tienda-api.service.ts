@@ -1,6 +1,6 @@
 // Cliente HTTP para endpoints de tienda (validar token, catálogo, producto).
 
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -27,15 +27,11 @@ export class TiendaApiService {
 
   /**
    * Catálogo y sucursales — GET /tienda/informacion.
-   * Contrato backend: solo header `ngrok-skip-browser-warning: true` (túnel ngrok).
+   * Header ngrok: lo aplica `interceptorNgrokSkipBrowserWarning` a todo el API.
    */
   obtenerInformacion(): Observable<InformacionTiendaDto> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
     return this.http.get<InformacionTiendaDto>(
       `${this.apiUrl}/tienda/informacion`,
-      { headers },
     );
   }
 
