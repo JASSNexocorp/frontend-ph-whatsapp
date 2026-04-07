@@ -45,6 +45,7 @@ import {
   reconstruirSeleccionesDesdeIdsCarrito,
   resolverProductoDetalle,
 } from '../../utils/tienda-mappers.util';
+import { urlWaMeSucursalCliente } from '../../utils/wa-me-url.util';
 
 @Component({
   selector: 'app-menu-page',
@@ -584,8 +585,7 @@ export class MenuPageComponent implements OnInit, OnDestroy {
       await firstValueFrom(this.tiendaApi.notificarCarrito(cuerpo));
       this.lineasCarrito.set([]);
       this.cerrarCarrito();
-      // Navegador in-app de WhatsApp: atrás vuelve al chat sin delay ni mensaje extra.
-      globalThis.history.back();
+      this.salirHaciaWhatsAppTrasPedidoOk();
     } catch (err: unknown) {
       this.mostrarAvisoPedido(mensajeUsuarioNotificarCarrito(err), true);
     } finally {
@@ -607,5 +607,22 @@ export class MenuPageComponent implements OnInit, OnDestroy {
       clearTimeout(this.idTimerAvisoPedido);
       this.idTimerAvisoPedido = null;
     }
+  }
+
+  /**
+   * history.back() suele no hacer nada en el WebView de WhatsApp (historial de una sola página).
+   * No se puede cerrar el visor con JS. Abrir wa.me con el teléfono de la sucursal del menú
+   * suele llevar de vuelta a la app de WhatsApp; si falta dato, intentamos atrás igual.
+   */
+  private salirHaciaWhatsAppTrasPedidoOk(): void {
+    const urlWa = urlWaMeSucursalCliente(
+      this.informacionTienda(),
+      this.menuCliente.nombreSucursal(),
+    );
+    if (urlWa) {
+      globalThis.location.replace(urlWa);
+      return;
+    }
+    globalThis.history.back();
   }
 }
