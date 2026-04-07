@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { environment } from '../../../../../environments/environment';
 import { MenuClienteStore } from '../../aplicacion/menu-cliente.store';
 import { MenuCartModalComponent } from '../../components/menu-cart-modal/menu-cart-modal.component';
 import { MenuCollectionsNavComponent } from '../../components/menu-collections-nav/menu-collections-nav.component';
@@ -45,7 +46,7 @@ import {
   reconstruirSeleccionesDesdeIdsCarrito,
   resolverProductoDetalle,
 } from '../../utils/tienda-mappers.util';
-import { urlWaMeSucursalCliente } from '../../utils/wa-me-url.util';
+import { urlWaMeVolverAlChat } from '../../utils/wa-me-url.util';
 
 @Component({
   selector: 'app-menu-page',
@@ -615,9 +616,10 @@ export class MenuPageComponent implements OnInit, OnDestroy {
    * suele llevar de vuelta a la app de WhatsApp; si falta dato, intentamos atrás igual.
    */
   private salirHaciaWhatsAppTrasPedidoOk(): void {
-    const urlWa = urlWaMeSucursalCliente(
+    const urlWa = urlWaMeVolverAlChat(
       this.informacionTienda(),
       this.menuCliente.nombreSucursal(),
+      environment.whatsappUrl,
     );
     if (urlWa) {
       globalThis.location.replace(urlWa);

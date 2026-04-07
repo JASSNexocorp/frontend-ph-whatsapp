@@ -21,3 +21,18 @@ export function urlWaMeSucursalCliente(
   if (digitos.length < 8) return null;
   return `https://wa.me/${digitos}`;
 }
+
+/**
+ * URL para volver al chat tras el pedido.
+ * Primero `whatsappUrl` del environment (misma línea que configurás, ej. +591 64534476 → wa.me/59164534476);
+ * si no está definida, teléfono de la sucursal en el catálogo.
+ */
+export function urlWaMeVolverAlChat(
+  informacion: InformacionTiendaDto | null,
+  nombreSucursalJwt: string | null,
+  urlWhatsAppDefecto: string | null | undefined,
+): string | null {
+  const f = urlWhatsAppDefecto?.trim();
+  if (f && f.length > 0) return f;
+  return urlWaMeSucursalCliente(informacion, nombreSucursalJwt);
+}
