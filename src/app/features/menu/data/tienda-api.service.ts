@@ -26,25 +26,17 @@ export class TiendaApiService {
   }
 
   /**
-   * Catálogo y sucursales. Si se pasa `titulo`, el backend puede filtrar
-   * (mismo contrato que el cURL con body urlencoded en GET).
+   * Catálogo y sucursales — GET /tienda/informacion.
+   * Contrato backend: solo header `ngrok-skip-browser-warning: true` (túnel ngrok).
    */
-  obtenerInformacion(titulo?: string): Observable<InformacionTiendaDto> {
-    const url = `${this.apiUrl}/tienda/informacion`;
+  obtenerInformacion(): Observable<InformacionTiendaDto> {
     const headers = new HttpHeaders({
-      // 'Content-Type': 'application/x-www-form-urlencoded',
       'ngrok-skip-browser-warning': 'true',
     });
-    console.log('headers', headers);
-    console.log('titulo', titulo);
-    if (titulo != null && titulo.trim() !== '') {
-      const body = new HttpParams().set('titulo', titulo).toString();
-      return this.http.request<InformacionTiendaDto>('GET', url, {
-        headers,
-        body,
-      });
-    }
-    return this.http.get<InformacionTiendaDto>(url);
+    return this.http.get<InformacionTiendaDto>(
+      `${this.apiUrl}/tienda/informacion`,
+      { headers },
+    );
   }
 
   /**
