@@ -35,6 +35,8 @@ export class TiendaApiService {
       // 'Content-Type': 'application/x-www-form-urlencoded',
       'ngrok-skip-browser-warning': 'true',
     });
+    console.log('headers', headers);
+    console.log('titulo', titulo);
     if (titulo != null && titulo.trim() !== '') {
       const body = new HttpParams().set('titulo', titulo).toString();
       return this.http.request<InformacionTiendaDto>('GET', url, {
