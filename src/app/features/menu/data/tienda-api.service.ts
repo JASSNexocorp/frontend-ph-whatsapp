@@ -33,6 +33,7 @@ export class TiendaApiService {
     const url = `${this.apiUrl}/tienda/informacion`;
     const headers = new HttpHeaders({
       'Content-Type': 'application/x-www-form-urlencoded',
+      'ngrok-skip-browser-warning': 'true',
     });
     if (titulo != null && titulo.trim() !== '') {
       const body = new HttpParams().set('titulo', titulo).toString();
