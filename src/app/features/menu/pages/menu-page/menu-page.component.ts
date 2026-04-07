@@ -584,10 +584,8 @@ export class MenuPageComponent implements OnInit, OnDestroy {
       await firstValueFrom(this.tiendaApi.notificarCarrito(cuerpo));
       this.lineasCarrito.set([]);
       this.cerrarCarrito();
-      this.mostrarAvisoPedido(
-        'Listo. Volvé a WhatsApp para ver el resumen del pedido.',
-        false,
-      );
+      // Navegador in-app de WhatsApp: atrás vuelve al chat sin delay ni mensaje extra.
+      globalThis.history.back();
     } catch (err: unknown) {
       this.mostrarAvisoPedido(mensajeUsuarioNotificarCarrito(err), true);
     } finally {
