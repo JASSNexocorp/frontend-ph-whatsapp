@@ -32,7 +32,7 @@ export class TiendaApiService {
   obtenerInformacion(titulo?: string): Observable<InformacionTiendaDto> {
     const url = `${this.apiUrl}/tienda/informacion`;
     const headers = new HttpHeaders({
-      'Content-Type': 'application/x-www-form-urlencoded',
+      // 'Content-Type': 'application/x-www-form-urlencoded',
       'ngrok-skip-browser-warning': 'true',
     });
     if (titulo != null && titulo.trim() !== '') {
