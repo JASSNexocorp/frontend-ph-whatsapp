@@ -9,8 +9,9 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+
+import { environment } from '../../../../../environments/environment';
 import { MenuClienteStore } from '../../aplicacion/menu-cliente.store';
 import { MenuCartModalComponent } from '../../components/menu-cart-modal/menu-cart-modal.component';
 import { MenuCollectionsNavComponent } from '../../components/menu-collections-nav/menu-collections-nav.component';
@@ -50,6 +51,7 @@ import {
   reconstruirSeleccionesDesdeIdsCarrito,
   resolverProductoDetalle,
 } from '../../utils/tienda-mappers.util';
+import { urlWaMeVolverAlChat } from '../../utils/wa-me-url.util';
 
 @Component({
   selector: 'app-menu-page',
@@ -66,7 +68,6 @@ import {
 export class MenuPageComponent implements OnInit, OnDestroy {
   private readonly tiendaApi = inject(TiendaApiService);
   private readonly menuCliente = inject(MenuClienteStore);
-  private readonly enrutador = inject(Router);
   private idTimerAvisoPedido: ReturnType<typeof setTimeout> | null = null;
 
   readonly assetsMenu = MENU_RUTAS_ASSETS;
@@ -604,10 +605,7 @@ export class MenuPageComponent implements OnInit, OnDestroy {
       await firstValueFrom(this.tiendaApi.notificarCarrito(cuerpo));
       this.lineasCarrito.set([]);
       this.cerrarCarrito();
-      this.menuCliente.limpiarSesion();
-      await this.enrutador.navigate(['/link-expirado'], {
-        state: { motivo: 'PEDIDO_CONFIRMADO' },
-      });
+      this.salirHaciaWhatsAppTrasPedidoOk();
     } catch (err: unknown) {
       this.mostrarAvisoPedido(mensajeUsuarioNotificarCarrito(err), true);
     } finally {
@@ -631,4 +629,21 @@ export class MenuPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * history.back() suele no hacer nada en el WebView de WhatsApp (historial de una sola página).
+   * No se puede cerrar el visor con JS. Abrir wa.me con el teléfono de la sucursal del menú
+   * suele llevar de vuelta a la app de WhatsApp; si falta dato, intentamos atrás igual.
+   */
+  private salirHaciaWhatsAppTrasPedidoOk(): void {
+    const urlWa = urlWaMeVolverAlChat(
+      this.informacionTienda(),
+      this.menuCliente.nombreSucursal(),
+      environment.whatsappUrl,
+    );
+    if (urlWa) {
+      globalThis.location.replace(urlWa);
+      return;
+    }
+    globalThis.history.back();
+  }
 }
