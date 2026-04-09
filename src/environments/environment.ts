@@ -2,7 +2,7 @@
 
 export const environment = {
   /** Base del backend (sin barra final). */
-  apiUrl: 'https://38dd-190-171-228-246.ngrok-free.app',
+  apiUrl: 'https://15b1-190-180-46-101.ngrok-free.app',
   /** Línea WhatsApp del menú (+591 64534476 en formato wa.me, sin espacios ni +). */
   whatsappUrl: 'https://wa.me/59164534476',
 };
