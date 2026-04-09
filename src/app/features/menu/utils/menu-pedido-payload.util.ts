@@ -12,6 +12,8 @@ export interface OpcionPedidoPayload {
 export interface LineaPedidoPayload {
   idOfisistema: string;
   idShopify: string;
+  /** Mismo nombre que en el metafield / Nest cuando el API lo envía. */
+  object_number?: string;
   nombre: string;
   cantidad: number;
   opciones: OpcionPedidoPayload[];
@@ -72,6 +74,9 @@ export function construirPayloadPedidoDesdeCarrito(
     lineas: lineas.map((l) => ({
       idOfisistema: l.idProducto,
       idShopify: l.idShopify,
+      ...(l.object_number != null && l.object_number.trim() !== ''
+        ? { object_number: l.object_number.trim() }
+        : {}),
       nombre: l.nombre,
       cantidad: l.cantidad,
       opciones: l.opcionesCarrito.map((o, i) => ({

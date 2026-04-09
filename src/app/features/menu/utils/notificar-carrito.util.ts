@@ -24,6 +24,10 @@ export function aCuerpoNotificarCarritoApi(
     if (l.idShopify.trim() !== '') {
       linea.idShopify = l.idShopify;
     }
+    const objectNumber = l.object_number?.trim();
+    if (objectNumber && objectNumber !== '') {
+      linea.object_number = objectNumber;
+    }
     const opciones: NotificarCarritoLineaOpcionDto[] = l.opciones.map((o) => {
       const op: NotificarCarritoLineaOpcionDto = {
         tituloSeccion: o.tituloSeccion,

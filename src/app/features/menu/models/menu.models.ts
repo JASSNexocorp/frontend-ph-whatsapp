@@ -94,6 +94,10 @@ export interface LineaCarrito {
   idProducto: string;
   /** Variante / producto en Shopify (mismo origen que GET /tienda/producto). */
   idShopify: string;
+  /**
+   * Metafield / API `object_number` (a veces también en `obj_num`); va igual al POST notificar-carrito.
+   */
+  object_number?: string;
   nombre: string;
   /** Precio unitario con opciones / extras aplicados. */
   precioUnitario: number;

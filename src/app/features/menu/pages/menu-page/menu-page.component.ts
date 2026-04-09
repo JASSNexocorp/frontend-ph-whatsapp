@@ -42,7 +42,12 @@ import {
   mensajeUsuarioNotificarCarrito,
 } from '../../utils/notificar-carrito.util';
 import {
+  cadenaDiaDesdeProductoTienda,
+  productoVisibleSegunCampoDia,
+} from '../../utils/product-day-visibility.util';
+import {
   mapearInformacionAColeccionesMenu,
+  objectNumberDesdeProductoTienda,
   reconstruirSeleccionesDesdeIdsCarrito,
   resolverProductoDetalle,
 } from '../../utils/tienda-mappers.util';
@@ -339,6 +344,15 @@ export class MenuPageComponent implements OnInit, OnDestroy {
       const dto = await firstValueFrom(
         this.tiendaApi.obtenerProductoPorTitulo(nombreProducto.trim()),
       );
+      if (!productoVisibleSegunCampoDia(cadenaDiaDesdeProductoTienda(dto))) {
+        this.mostrarAvisoPedido(
+          'Este producto no está disponible hoy.',
+          true,
+        );
+        this.lineaEditandoId.set(null);
+        this.fijarScrollDocumento(this.modalCarritoAbierto());
+        return;
+      }
       this.dtoProdutoActivo.set(dto);
 
       let selecciones: SeleccionesPorSeccion = {};
@@ -453,6 +467,8 @@ export class MenuPageComponent implements OnInit, OnDestroy {
       }
     }
 
+    const objectNumber = objectNumberDesdeProductoTienda(dto);
+
     const idEdicion = this.lineaEditandoId();
     if (idEdicion) {
       this.lineasCarrito.update((lineas) =>
@@ -466,6 +482,7 @@ export class MenuPageComponent implements OnInit, OnDestroy {
                 precioComparacionUnitario,
                 idsOpcionesSeleccionadas: idsEfectivos,
                 opcionesCarrito,
+                object_number: objectNumber ?? l.object_number,
               }
             : l,
         ),
@@ -493,6 +510,7 @@ export class MenuPageComponent implements OnInit, OnDestroy {
           precioComparacionUnitario,
           idsOpcionesSeleccionadas: idsEfectivos,
           opcionesCarrito,
+          object_number: objectNumber,
         };
         return [...lineas, nueva];
       }
@@ -506,6 +524,7 @@ export class MenuPageComponent implements OnInit, OnDestroy {
         precioComparacionUnitario,
         idsOpcionesSeleccionadas: idsEfectivos,
         opcionesCarrito,
+        object_number: objectNumber ?? copia[idx].object_number,
       };
       return copia;
     });

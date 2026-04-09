@@ -16,6 +16,8 @@ export interface ProductoResumenInformacionDto {
   imagen?: string;
   id_shopify?: string;
   id_ofisistema?: string;
+  /** Metafield día: vacío = siempre visible; ver `productoVisibleSegunCampoDia`. */
+  dia?: string;
   estado?: boolean;
   stock_total?: number;
   sucursales?: { nombre: string; stock: number }[];

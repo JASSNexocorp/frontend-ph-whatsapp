@@ -32,7 +32,8 @@ export interface ProductoOpcionMetafieldDto {
 
 export interface ProductoMetafieldDto {
   id: string;
-  object_number: string;
+  /** A veces el API no lo envía; si viene, se usa en el carrito / notificar. */
+  object_number?: string;
   dia: string;
   secciones: ProductoMetafieldSeccionDto[];
 }
@@ -45,7 +46,8 @@ export interface ColeccionDetalleDto {
 export interface ProductoTiendaDto {
   id_shopify: string;
   id_ofisistema: string;
-  obj_num: string;
+  /** A veces vacío o ausente; respaldo si `metafield.object_number` no viene. */
+  obj_num?: string;
   handle: string;
   nombre: string;
   descripcion: string;

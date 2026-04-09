@@ -19,6 +19,10 @@ import type {
 } from '../models/tienda-producto.models';
 import { formatearPrecioBs } from './menu-format.util';
 import { normalizarUrlImagen } from './menu-url.util';
+import {
+  cadenaDiaDesdeResumenProducto,
+  productoVisibleSegunCampoDia,
+} from './product-day-visibility.util';
 
 /** Genera un id estable en kebab-case a partir del título de colección. */
 export function idColeccionDesdeTitulo(titulo: string): string {
@@ -36,11 +40,32 @@ function normalizarNombreSucursalClave(nombre: string): string {
   return nombre.trim().replace(/\s+/g, ' ').toUpperCase();
 }
 
-/** Productos con `estado === false` no se listan en el menú (se filtran antes de mapear). */
+/**
+ * Prioriza `metafield.object_number`; si no hay, `obj_num` raíz.
+ * Así coincide con cómo suele venir el metafield en el API.
+ */
+export function objectNumberDesdeProductoTienda(
+  dto: ProductoTiendaDto,
+): string | undefined {
+  const meta = dto.metafield?.object_number?.trim();
+  if (meta) {
+    return meta;
+  }
+  const directo = dto.obj_num?.trim();
+  return directo || undefined;
+}
+
+/**
+ * Productos con `estado === false` no se listan.
+ * Si `dia` no está vacío y no corresponde al día local del dispositivo, tampoco.
+ */
 export function productoResumenVisibleEnMenu(
   p: ProductoResumenInformacionDto,
 ): boolean {
-  return p.estado !== false;
+  if (p.estado === false) {
+    return false;
+  }
+  return productoVisibleSegunCampoDia(cadenaDiaDesdeResumenProducto(p));
 }
 
 const MENSAJE_STOCK_TOTAL = 'Sin stock disponible.';

@@ -11,6 +11,8 @@ export interface NotificarCarritoLineaDto {
   cantidad: number;
   idOfisistema?: string;
   idShopify?: string;
+  /** Metafield del producto; el front rellena desde `obj_num` o `metafield.object_number`. */
+  object_number?: string;
   opciones?: NotificarCarritoLineaOpcionDto[];
 }
 
