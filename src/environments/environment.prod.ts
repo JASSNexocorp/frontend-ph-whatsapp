@@ -2,6 +2,6 @@
 
 export const environment = {
   development: true,
-  apiUrl: 'https://b4cf-190-180-46-101.ngrok-free.app',
+  apiUrl: 'https://15ab-190-180-46-101.ngrok-free.app',
   whatsappUrl: 'https://wa.me/59164534476',
 };
